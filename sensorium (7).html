@@ -1,0 +1,3285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Sensorium — AI Explorer Lab</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<style>
+:root{
+  --bg:#090b0e;--fg:#eef1f4;--muted:#8b939e;--subtle:#5a6270;
+  --accent:#5ed0c4;--accent-dim:rgba(94,208,196,.14);
+  --ok:#6bc46d;--warn:#e0b35a;--danger:#e07171;
+  --surface:#0f1218;--elev:#161a22;--border:#222833;
+  --shadow:0 24px 60px rgba(0,0,0,.45);
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  font-size:14px;letter-spacing:.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;transition:border-color .15s,background .15s,opacity .15s}
+button:active{opacity:.85}
+#app{display:flex;flex-direction:column;height:100dvh;min-height:0}
+#setup{position:fixed;inset:0;z-index:20;background:
+  radial-gradient(ellipse 80% 50% at 50% -10%,rgba(94,208,196,.1),transparent 55%),
+  linear-gradient(180deg,#090b0e 0%,#0f1218 100%);
+  display:flex;align-items:center;justify-content:center;padding:28px}
+.setup-grid{width:min(1000px,100%);display:grid;gap:36px}
+@media(min-width:900px){.setup-grid{grid-template-columns:1fr 1fr;align-items:center;gap:48px}}
+.kicker{letter-spacing:.28em;font-size:10px;color:var(--accent);text-transform:uppercase;margin:0;opacity:.9}
+h1{font-size:clamp(34px,5vw,48px);font-weight:500;letter-spacing:-.045em;margin:10px 0 14px;line-height:1.05}
+.lede{color:var(--muted);max-width:26rem;line-height:1.6;font-size:14px;margin:0}
+.feat{list-style:none;padding:0;margin:28px 0 0;color:var(--muted);font-size:13px}
+.feat li{display:flex;gap:12px;margin:12px 0;align-items:flex-start}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:7px;flex:none;box-shadow:0 0 10px rgba(94,208,196,.5)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+.card h2{margin:0;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.field{margin:14px 0}
+.field label,.knob span,.insp label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px;letter-spacing:.03em}
+input[type=text],input[type=password],input[type=number],select,textarea{
+  width:100%;background:var(--elev);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#3a4555}
+.hint{font-size:11px;color:var(--subtle);margin-top:6px;line-height:1.4}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.btnrow{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+button.primary{background:var(--fg);color:var(--bg);border:0;border-radius:var(--radius-sm);padding:10px 16px;font-weight:500}
+button.accent{background:var(--accent);color:#061210;border:0;border-radius:var(--radius-sm);padding:10px 16px;font-weight:600}
+button.ghost,button.sec{
+  background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--fg)}
+button.ghost:hover,button.sec:hover{background:var(--elev);border-color:#343c4a}
+.linkish{background:none;border:0;color:var(--muted);padding:0;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--elev);
+  border-radius:999px;padding:5px 11px;font-size:11px;color:var(--muted);max-width:20rem}
+.pill i{width:6px;height:6px;border-radius:50%;background:var(--muted);flex:none}
+.pill.ok i{background:var(--ok)}.pill.err i{background:var(--danger)}
+.pill.warn i{background:var(--warn)}.pill.local i{background:var(--accent)}
+header.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:rgba(15,18,24,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 14px}
+footer.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--surface);border-top:1px solid var(--border);padding:8px 14px}
+.brand{margin-right:4px}
+.brand small{display:block;color:var(--muted);font-size:10px;margin-top:1px}
+.brand b{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--border);background:var(--elev);border-radius:999px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:5px 11px;border-radius:999px;font-size:11px}
+.seg button.on{background:var(--fg);color:var(--bg)}
+.shell{display:flex;flex:1;min-height:0}
+aside.dock{flex:none;background:var(--surface);display:flex;flex-direction:column;min-height:0}
+aside.left{border-right:1px solid var(--border);width:280px}
+aside.right{width:360px;border-left:1px solid var(--border)}
+aside.right .pane{display:flex;flex-direction:column;padding:0}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 6px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;border:0;background:none;color:var(--subtle);padding:12px 10px;font-size:11px;
+  letter-spacing:.02em;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.pane{padding:14px;overflow:auto;flex:1;min-height:0}
+.pane::-webkit-scrollbar{width:6px}.pane::-webkit-scrollbar-thumb{background:#2a3140;border-radius:8px}
+#view{position:relative;flex:1;min-width:0;background:#0a0c10}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;top:14px;left:14px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.chip{background:rgba(15,18,24,.75);backdrop-filter:blur(8px);border:1px solid var(--border);
+  border-radius:999px;padding:5px 10px;font-size:11px;color:var(--muted)}
+.olist{list-style:none;margin:10px 0 0;padding:0}
+.olist button{width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--muted);
+  padding:9px 10px;border-radius:var(--radius-sm);text-align:left}
+.olist button.on,.olist button:hover{background:var(--elev);color:var(--fg)}
+.sw{width:9px;height:9px;border-radius:3px;flex:none}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--subtle);margin-left:auto}
+.row{display:flex;justify-content:space-between;gap:8px;margin:7px 0;color:var(--muted);font-size:12px}
+.row b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+canvas.vis{width:100%;height:auto;image-rendering:pixelated;background:#000;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.thought{font-size:13px;line-height:1.55;margin:0 0 10px}
+.log{font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;margin-top:8px}
+.log div{padding:4px 0;border-bottom:1px solid #1c212b}
+.chat-app{display:flex;flex-direction:column;height:100%;min-height:0}
+.chat-head{padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.chat-head b{display:block;font-size:14px;font-weight:500;letter-spacing:-.01em}
+.chat-head span{font-size:11px;color:var(--muted);margin-top:4px;display:block}
+.chat-thread{flex:1;overflow:auto;padding:14px 14px;display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:92%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;word-wrap:break-word}
+.bubble.agent{align-self:flex-start;background:var(--elev);border:1px solid var(--border);border-bottom-left-radius:4px}
+.bubble.you{align-self:flex-end;background:var(--accent-dim);border:1px solid rgba(94,208,196,.25);color:#d7f5f1;border-bottom-right-radius:4px}
+.bubble time{display:block;margin-top:6px;font-size:10px;color:var(--subtle)}
+.chat-compose{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border)}
+.chat-compose input{flex:1;border-radius:999px;padding:10px 14px;background:var(--elev);border:1px solid var(--border)}
+.chat-compose input:disabled{opacity:.45}
+.chat-lock{font-size:11px;color:var(--subtle);padding:0 16px 8px}
+.think-panel{margin:0;border-bottom:1px solid var(--border);background:transparent;padding:0 16px 10px;font-size:12px}
+.think-panel summary{cursor:pointer;color:var(--muted);font-size:11px;user-select:none;letter-spacing:.04em;text-transform:uppercase;padding-top:10px}
+.think-panel summary:hover{color:var(--accent)}
+.mono-scroll{max-height:120px;overflow:auto;margin-top:8px;padding:0}
+.mono-line{padding:5px 0;border-bottom:1px solid rgba(38,43,53,.6);color:var(--muted);font-size:11px;line-height:1.45}
+.mono-t{color:var(--subtle);font-family:ui-monospace,monospace;font-size:9px;margin-right:6px}
+.goal-bar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.goal-chip{border:1px solid var(--border);border-radius:999px;padding:4px 10px;color:var(--muted);font-size:11px}
+.goal-chip.on{border-color:rgba(94,208,196,.4);color:var(--accent);background:var(--accent-dim)}
+.goal-chip.done{border-color:rgba(107,196,109,.35);color:var(--ok)}
+.mission-card{margin:0 14px 10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--elev);font-size:12px}
+.mission-card b{display:block;margin-bottom:6px;font-weight:500}
+.mission-steps{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.6}
+.mission-steps li.done{color:var(--ok);text-decoration:line-through;opacity:.7}
+.mission-steps li.cur{color:var(--fg)}
+.status-row{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;font-size:11px;border-bottom:1px solid var(--border)}
+.knob{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.knob input[type=range]{width:72px;accent-color:var(--accent)}
+.insp input[type=range]{width:100%;accent-color:var(--accent)}
+.wrapbtns{display:flex;flex-wrap:wrap;gap:6px}
+.hidden{display:none !important}
+.footer-tools{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.mobile-nav{display:none;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);background:var(--surface)}
+.mobile-nav button{border:0;background:none;color:var(--muted);padding:12px 4px;font-size:11px}
+.mobile-nav button.on{color:var(--fg)}
+@media(max-width:980px){
+  aside.left,aside.right{display:none}
+  aside.left.show,aside.right.show{display:flex;position:absolute;inset:52px 0 52px 0;width:auto;z-index:5}
+  .mobile-nav{display:grid}
+  footer.bar{display:none}
+}
+</style>
+</head>
+<body>
+<div id="setup">
+  <div class="setup-grid">
+    <section>
+      <p class="kicker">Explorer laboratory</p>
+      <h1>Sensorium</h1>
+      <p class="lede">A chamber where an embodied model sees only a 128×128 visual buffer, feels contact through a probe, and hears frequencies in hertz. It is not told the names of things. It has to find out.</p>
+      <ul class="feat">
+        <li><span class="dot"></span>Spectral vision with LMS cones & wavelength histograms</li>
+        <li><span class="dot"></span>Complex mode: interoception, digestion, neurochemistry</li>
+        <li><span class="dot"></span>Multi-step missions + sandbox operator tools</li>
+        <li><span class="dot"></span>API key stays in this browser; optional on-device cortex</li>
+      </ul>
+    </section>
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+        <h2>Cortex configuration</h2>
+        <span class="pill" id="setupStatus"><i></i><span>Idle</span></span>
+      </div>
+      <div class="field">
+        <label for="provider">Brain provider</label>
+        <select id="provider">
+          <option value="groq" selected>Groq (free tier)</option>
+          <option value="hf">Hugging Face Inference Providers</option>
+        </select>
+        <div class="hint" id="providerHint">Groq keys start with gsk_. Free tier is rate-limited — use Think ~7–12s. Local motor fills gaps when limited.</div>
+      </div>
+      <div class="field">
+        <label for="hf-key" id="keyLabel">Groq API key</label>
+        <input id="hf-key" type="password" autocomplete="off" placeholder="gsk_…"/>
+        <div class="hint" id="keyHint">Stored locally. Sent only to api.groq.com.</div>
+      </div>
+      <div class="field">
+        <label for="hf-model">Model</label>
+        <select id="hf-model"></select>
+      </div>
+      <div class="field">
+        <label for="hf-custom">Custom model id</label>
+        <input id="hf-custom" type="text" placeholder="org/model (overrides the list)"/>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Temperature</label><input id="temp" type="number" min="0" max="1.5" step="0.05" value="0.35"/></div>
+        <div class="field"><label>Max tokens</label><input id="tokens" type="number" min="32" max="512" step="8" value="96"/></div>
+        <div class="field"><label>Think ms</label><input id="thinkms" type="number" min="3000" max="20000" step="500" value="7000"/></div>
+      </div>
+      <div class="btnrow">
+        <button class="accent" id="enterLocal">Enter with local cortex</button>
+        <button class="primary" id="enterHf">Connect and enter</button>
+      </div>
+      <div class="btnrow" style="justify-content:space-between">
+        <button class="linkish" id="testHf">Test connection</button>
+        <span class="hint">Local cortex works offline after Three.js loads.</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="bar">
+    <div class="brand"><b>Sensorium</b><small>Embodied AI lab</small></div>
+    <span class="pill local" id="statusPill"><i></i><span>Idle</span></span>
+    <div class="seg" id="camSeg">
+      <button data-cam="orbit" class="on">Orbit</button>
+      <button data-cam="follow">Follow</button>
+      <button data-cam="walk">Walk</button>
+    </div>
+    <label class="pill" style="cursor:pointer" title="Agent rests when goal ends"><input id="autoStop" type="checkbox" checked style="accent-color:var(--accent)"/> Autostop</label>
+    <label class="pill" style="cursor:pointer" title="Interoception, neurochem, digestion"><input id="complexMode" type="checkbox" style="accent-color:var(--accent)"/> Complex</label>
+    <span class="chip" id="hudWake">exploring</span>
+    <span class="chip hidden" id="hudEnergy">E 100%</span>
+    <div class="footer-tools">
+      <button class="accent" id="btnWake">Wake</button>
+      <button class="sec" id="btnPause">Pause</button>
+      <button class="ghost" id="btnRestart">Reset</button>
+    </div>
+  </header>
+  <div class="shell">
+    <aside class="dock left" id="leftDock">
+      <div class="tabs" id="leftTabs">
+        <button data-tab="objects" class="on">World</button>
+        <button data-tab="inspector">Edit</button>
+        <button data-tab="scene">Light</button>
+        <button data-tab="audiolab">Audio</button>
+        <button data-tab="body">Body</button>
+        <button data-tab="sandbox">Fun</button>
+      </div>
+      <div class="pane" id="leftPane"></div>
+    </aside>
+    <main id="view">
+      <canvas id="c"></canvas>
+      <div class="hud">
+        <span class="chip" id="hudAction">wait</span>
+        <span class="chip hidden" id="hudHeld">carrying</span>
+      </div>
+    </main>
+    <aside class="dock right" id="rightDock">
+      <div class="tabs" id="rightTabs">
+        <button data-tab="cortex" class="on">Mind</button>
+        <button data-tab="vision">Eyes</button>
+        <button data-tab="senses">Feel</button>
+      </div>
+      <div class="pane" id="rightPane"></div>
+    </aside>
+  </div>
+  <footer class="bar">
+    <label class="knob"><span>Speed</span><input id="aiSpeed" type="range" min="0.3" max="2.5" step="0.1" value="1"/></label>
+    <label class="knob"><span>Sim</span><input id="simSpeed" type="range" min="0" max="2" step="0.1" value="1"/></label>
+    <label class="knob"><span>Think</span><input id="thinkLive" type="range" min="3000" max="20000" step="500" value="7000"/></label>
+    <input id="sensorHz" type="range" min="2" max="12" step="1" value="6" class="hidden"/>
+    <input id="visRes" type="range" min="64" max="256" step="64" value="128" class="hidden"/>
+    <div class="footer-tools">
+      <button class="sec" id="btnSpawn">Spawn</button>
+      <button class="sec" id="btnRand">Shuffle</button>
+      <button class="ghost" id="btnResetRoom">Reset room</button>
+      <button class="ghost" id="btnClearMem">Clear mem</button>
+      <button class="ghost" id="btnSave">Save</button>
+      <button class="ghost" id="btnLoad">Load</button>
+      <button class="ghost" id="btnExport">Export</button>
+      <input id="loadFile" type="file" accept="application/json" class="hidden"/>
+    </div>
+  </footer>
+  <div class="bar hidden" id="chatBar"></div>
+  <nav class="mobile-nav" id="mobileNav">
+    <button data-m="world" class="on">World</button>
+    <button data-m="vision">Vision</button>
+    <button data-m="ai">Cortex</button>
+    <button data-m="edit">Edit</button>
+  </nav>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
+
+const HF_MODELS = [
+  {id:"Qwen/Qwen3-8B:nscale", label:"Qwen 3 8B (Nscale)"},
+  {id:"Qwen/Qwen3-4B-Instruct-2507:nscale", label:"Qwen 3 4B Instruct (Nscale)"},
+  {id:"meta-llama/Llama-3.1-8B-Instruct:novita", label:"Llama 3.1 8B (Novita)"},
+  {id:"google/gemma-3-4b-it:deepinfra", label:"Gemma 3 4B (DeepInfra)"},
+];
+const GROQ_MODELS = [
+  {id:"openai/gpt-oss-20b", label:"GPT-OSS 20B (recommended)"},
+  {id:"qwen/qwen3.6-27b", label:"Qwen 3.6 27B"},
+  {id:"qwen/qwen3.8-27b", label:"Qwen 3.8 27B"},
+  {id:"openai/gpt-oss-120b", label:"GPT-OSS 120B"},
+  {id:"llama-3.3-70b-versatile", label:"Llama 3.3 70B Versatile"},
+  {id:"groq/compound-mini", label:"Groq Compound Mini"},
+];
+const ACTIONS = ["forward","back","turn_left","turn_right","look_up","look_down","strafe_left","strafe_right","touch","pickup","drop","wait","listen","scan","rest","explore","investigate","eat","digest","flee","approach","circle","inspect_close","map_area","seek_sound","seek_light","calm","alert"];
+const ROOM_HALF = 4.8, ROOM_HEIGHT = 3.5, AGENT_R = 0.38, AGENT_EYE = 1.35, GRID = 10, WALL_T = 0.45;
+const CFG_KEY = "sensorium.config.v1";
+const BOX_KEY = "sensorium.sandbox.v1";
+
+const SYSTEM_PROMPT = `You are an embodied agent inside a small 3D chamber. You ARE the body: you see, feel, hear, move, and speak from first person.
+You never get object names or colour words from the world — only senses:
+- Vision: grid with brightness, depth (m), edges, LMS cones, dominant wavelength (nm), fovea, peripheral blur, habituation (stable walls/floor fade). Long-wave 620–750, mid 495–570, short 450–495 nm.
+- Touch when probe contacts: hardness, temp, curvature, texture, force.
+- Hearing: Hz, amplitude, azimuth (neg=left).
+- Proprioception: pose, heading, velocity, obstacle distance.
+- complexMode also: interoception, pain, skin/core temp, dopamine/cortisol/adrenaline/oxytocin/serotonin, circadian alertness, battery, memory, inner critic, lifespan.
+You fully control what to do next. A low-level controller only avoids getting permanently stuck; YOU choose goals and actions.
+Prefer purposeful sequences: notice a signal → approach → touch → maybe pickup/eat → update objective → rest when done.
+If food/nutrient soft bodies exist and you are hungry or tasked to eat, approach, pickup, then eat.
+Speak as someone who feels the room — not a narrator. "thought" can be 1–3 vivid sensory sentences.
+If driveMode is autostop and your goal is finished or nothing new remains, action "rest".
+Return ONLY JSON:
+{"thought":"1-3 sensory sentences","objective":"short goal","action":"forward|back|turn_left|turn_right|look_up|look_down|strafe_left|strafe_right|touch|pickup|drop|wait|listen|scan|rest|explore|investigate|eat|flee|approach|circle|inspect_close|map_area|seek_sound|seek_light|calm|alert","amount":0.4,"target":"optional hint","mission":{"name":"optional","step":0,"steps":[]}}`;
+
+function uid(p="id"){return p+"_"+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function round(n){return Math.round(n*1000)/1000}
+function hexToRgb(hex){
+  const h=hex.replace("#","");
+  const n=parseInt(h.length===3?h.split("").map(c=>c+c).join(""):h,16);
+  return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255];
+}
+function luminance(r,g,b){return 0.2126*r+0.7152*g+0.0722*b}
+function rgbToWavelengthNm(r,g,b){
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  if(max<0.05) return null;
+  const sat=max===0?0:(max-min)/max;
+  if(sat<0.08) return null; // lower threshold so saturated colours register more often
+  const d=max-min; let h=0;
+  if(max===r) h=(((g-b)/d+(g<b?6:0))*60)%360;
+  else if(max===g) h=((b-r)/d+2)*60;
+  else h=((r-g)/d+4)*60;
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  // Wider, more continuous mapping across the visible spectrum so dominant λ actually swings
+  if(h<10) return lerp(700,645,h/10);
+  if(h<20) return lerp(645,620,(h-10)/10);
+  if(h<40) return lerp(620,590,(h-20)/20);
+  if(h<60) return lerp(590,570,(h-40)/20);
+  if(h<90) return lerp(570,540,(h-60)/30);
+  if(h<130) return lerp(540,510,(h-90)/40);
+  if(h<160) return lerp(510,490,(h-130)/30);
+  if(h<190) return lerp(490,470,(h-160)/30);
+  if(h<230) return lerp(470,450,(h-190)/40);
+  if(h<260) return lerp(450,430,(h-230)/30);
+  if(h<290) return lerp(430,410,(h-260)/30);
+  return lerp(410,390,(h-290)/70);
+}
+/** Approximate LMS cone responses (human-like) from linear RGB. Peaks roughly L≈564nm, M≈534nm, S≈420nm. */
+function rgbToCones(r,g,b){
+  // simple linear transform approximating spectral sensitivities
+  const L = clamp(0.40*r + 0.55*g + 0.05*b, 0, 1.4);
+  const M = clamp(0.20*r + 0.65*g + 0.15*b, 0, 1.4);
+  const S = clamp(0.05*r + 0.15*g + 0.80*b, 0, 1.4);
+  return {L:round(L), M:round(M), S:round(S)};
+}
+function wavelengthToRgb(nm){
+  if(!Number.isFinite(nm)) return [0.5,0.5,0.5];
+  if(nm<380){
+    const t=clamp((nm-180)/200,0,1);
+    return [0.18*t,0.0,clamp(0.25+0.45*t,0,1)];
+  }
+  if(nm>750){
+    const t=clamp((1200-nm)/450,0,1);
+    return [clamp(0.15+0.45*t,0,1),0.02*t,0.03*t];
+  }
+  let r=0,g=0,b=0;
+  if(nm>=380&&nm<440){r=-(nm-440)/60;b=1}
+  else if(nm>=440&&nm<490){g=(nm-440)/50;b=1}
+  else if(nm>=490&&nm<510){g=1;b=-(nm-510)/20}
+  else if(nm>=510&&nm<580){r=(nm-510)/70;g=1}
+  else if(nm>=580&&nm<645){r=1;g=-(nm-645)/65}
+  else if(nm>=645&&nm<=780){r=1}
+  let f=1;
+  if(nm>=380&&nm<420) f=0.3+(0.7*(nm-380))/40;
+  else if(nm>700&&nm<=780) f=0.3+(0.7*(780-nm))/80;
+  return [clamp(r*f,0,1),clamp(g*f,0,1),clamp(b*f,0,1)];
+}
+function rgbToHex(r,g,b){
+  const h=n=>Math.round(clamp(n,0,1)*255).toString(16).padStart(2,"0");
+  return `#${h(r)}${h(g)}${h(b)}`;
+}
+function colorFromSpectrum(nm,nm2){
+  const a=wavelengthToRgb(nm);
+  if(!nm2) return rgbToHex(a[0],a[1],a[2]);
+  const b=wavelengthToRgb(nm2);
+  return rgbToHex((a[0]+b[0])*0.5,(a[1]+b[1])*0.5,(a[2]+b[2])*0.5);
+}
+function bandForNm(nm){
+  if(nm==null) return {band:"broadband", rangeNm:"mixed"};
+  if(nm>=620) return {band:"long-wave", rangeNm:"620–750"};
+  if(nm>=570) return {band:"yellow-orange", rangeNm:"570–620"};
+  if(nm>=495) return {band:"mid-wave", rangeNm:"495–570"};
+  if(nm>=450) return {band:"short-wave", rangeNm:"450–495"};
+  return {band:"violet", rangeNm:"380–450"};
+}
+
+function defaultSound(p={}){
+  return {enabled:false,frequency:440,volume:0.45,waveform:"sine",durationMs:420,...p};
+}
+function obj(partial){
+  return {
+    id:uid("obj"),
+    sound:defaultSound(),
+    rotation:[0,0,0], texture:"none", collision:true, temperature:20, hardness:0.6,
+    mass:1.5, friction:0.4, restitution:0.2, material:"matte",
+    wavelengthNm:null, wavelengthNm2:null,
+    ...partial,
+    sound:{...defaultSound(), ...(partial.sound||{})},
+  };
+}
+function createDefaultObjects(){
+  return [
+    obj({name:"Primary block",shape:"box",position:[-2.1,0.35,-1.6],rotation:[0,0.2,0],scale:[0.7,0.7,0.7],color:"#c43c32",material:"matte",mass:2.4,friction:0.55,restitution:0.12,temperature:21,hardness:0.82}),
+    obj({name:"Orb",shape:"sphere",position:[2.05,0.45,-2.0],scale:[0.9,0.9,0.9],color:"#2b6cdb",material:"glossy",mass:1.6,friction:0.22,restitution:0.55,temperature:18,hardness:0.7}),
+    obj({name:"Column",shape:"cylinder",position:[0.15,0.55,-2.8],scale:[0.55,1.1,0.55],color:"#d7b23a",material:"matte",texture:"stripes",mass:3.1,friction:0.48,restitution:0.18,temperature:23,hardness:0.75}),
+    obj({name:"Spire",shape:"cone",position:[-2.4,0.55,1.55],rotation:[0,0.4,0],scale:[0.7,1.1,0.7],color:"#3fa35a",material:"matte",mass:1.9,friction:0.4,restitution:0.2,temperature:22,hardness:0.68}),
+    obj({name:"Void ring",shape:"torus",position:[2.25,0.38,1.7],rotation:[Math.PI/2,0.2,0],scale:[0.85,0.85,0.85],color:"#141414",material:"metal",mass:2.8,friction:0.3,restitution:0.08,temperature:16,hardness:0.92}),
+    obj({name:"Pale body",shape:"capsule",position:[0.1,0.62,2.15],rotation:[0,0.3,0],scale:[0.55,0.9,0.55],color:"#f4f1ea",material:"glossy",mass:1.2,friction:0.25,restitution:0.35,temperature:24,hardness:0.5}),
+    obj({name:"Bead",shape:"sphere",position:[1.15,0.12,0.15],scale:[0.24,0.24,0.24],color:"#c9d0d8",material:"metal",mass:0.4,friction:0.12,restitution:0.62,temperature:15,hardness:0.95}),
+    obj({name:"Damping block",shape:"box",position:[-1.15,0.32,0.35],rotation:[0,-0.35,0],scale:[0.95,0.64,0.7],color:"#5a5348",material:"rubber",texture:"noise",mass:4.8,friction:0.92,restitution:0.72,temperature:26,hardness:0.28}),
+    obj({name:"Lens tube",shape:"cylinder",position:[3.05,0.5,0.1],scale:[0.42,1.0,0.42],color:"#9fd4e8",material:"glass",mass:1.1,friction:0.08,restitution:0.15,temperature:17,hardness:0.88}),
+    obj({name:"Beacon",shape:"box",position:[0,0.08,0],scale:[0.36,0.16,0.36],color:"#6ec8c0",material:"emissive",mass:0.8,friction:0.6,restitution:0.05,temperature:32,hardness:0.6,sound:{enabled:true,frequency:523.25,volume:0.55,waveform:"sine",durationMs:650}}),
+  ];
+}
+
+const S = {
+  entered:false, paused:false, useLocal:true, provider:"groq",
+  apiKey:"", model:GROQ_MODELS[0].id, customModel:"",
+  temperature:0.45, maxTokens:96, thinkingIntervalMs:7000,
+  apiCooldownUntil:0, rateLimitStrikes:0, lastRemoteAt:0, baseThinkMs:7000,
+  stepsThisWake:0, lastPos:[0,2.6], wantRemote:false,
+  visionResolution:128, visionMode:"raw",
+  aiSpeed:1, simSpeed:1, sensorHz:6, fov:70,
+  status:"idle", statusDetail:"Local cortex ready",
+  objects:createDefaultObjects(), selectedId:null,
+  lights:{ambient:0.28,key:1.15,fill:0.35,keyColor:"#f2efe6"},
+  agent:{x:0,y:0,z:2.6,yaw:0,pitch:-0.08,hand:[0.28,-0.18,0.42]},
+  heldId:null, vx:0, vz:0, action:"wait", actionT:0, actionDur:0.6, amount:0.5,
+  vision:emptyVision(), touch:emptyTouch(), hearing:[],
+  thought:"Waiting for first sensory frame.", objective:"Survey the chamber",
+  memory:[], activity:[],
+  awake:true, driveMode:"autostop", operatorNote:"",
+  transformMode:"translate", cameraMode:"orbit",
+  masterVolume:0.7, showLabels:false,
+  leftTab:"objects", rightTab:"cortex", chat:[],
+
+  /* --- navigation / exploration --- */
+  navTarget:null, navLabel:null, huntId:null, exploreTarget:null,
+  posHistory:[], posAcc:0, stuckLevel:0, recovering:false, recoverT:0, recoverYaw:0,
+  actionHistory:[], nearestObstacleM:8,
+  visitedCells:{}, cellSize:1.6,
+  frameId:0, frameTimeS:0,
+  senseTimeline:[],
+
+  /* --- audio / music lab --- */
+  audioLab:{playing:false, freq:440, freq2:0, volume:0.5, waveform:"sine", pos:[0,1.1,0], lastSentFreq:null, lastSentAmp:null, node:null, node2:null, gain:null},
+
+  /* --- complex mode & human-like physiology --- */
+  complexMode:false,
+  energy:1.0, hunger:0.2, hydration:0.85, coreTempC:37.0, skinTempC:33.5,
+  stomach:{contents:[], digesting:null, progress:0, capacity:3},
+  neuro:{dopamine:0.45, cortisol:0.15, adrenaline:0.1, oxytocin:0.3, serotonin:0.5},
+  intero:{baro:0.5, chemoO2:0.95, chemoCO2:0.18, osmo:0.5, gluco:0.7, pulmonary:0.4},
+  proprio:{jointAngles:{left:0,right:0,head:0}, balanceTilt:0, accel:[0,0,0]},
+  nociception:{mechanical:0, thermal:0, chemical:0, active:false},
+  adaptation:{dark:0, bright:0, lastMeanBright:0.3},
+  mission:null,
+  peripheralFovExtra:25,
+
+  /* --- human visual motor: saccades / micro-tremors / fovea --- */
+  gaze:{foveaGx:5, foveaGy:5, targetGx:5, targetGy:5, saccadeT:0, microTremor:[0,0], lastSaccade:0},
+  /* habituation: signatures that have been stable too long get suppressed */
+  habituated:{}, // sig -> {lastChange, stableFor, suppressed}
+  lastSenseSnapshot:null,
+
+  /* --- circadian & homeostatic drives --- */
+  circadian:{phase:0.35, /* 0=midnight 0.5=noon */ alertness:0.85, efficiency:1.0},
+  metabolic:{battery:1.0, computeLoad:0.2, memoryPressure:0.1, wear:0.0},
+  sleepDebt:0,
+
+  /* --- memory systems --- */
+  shortTermMem:[], // raw recent, decays
+  longTermMem:[],  // consolidated semantic summaries
+  beliefs:[],      // strong priors that resist contradiction
+  tipOfTongue:null, // {clues:[], answer, cyclesLeft}
+  subconsciousQueue:[],
+  innerCriticNote:"",
+  lifespanHours:72,
+  birthTime:Date.now(),
+  goal:null, // {type, detail, started, status}
+  goalFailStreak:0,
+  monologue:[], // internal self-talk lines
+  boredom:0,
+  lastObjective:"",
+  sameObjectiveSteps:0,
+  askPending:null, // string question for operator
+};
+function emptyVision(){
+  return {resolution:128,fov:70,meanBrightness:0,meanDepth:4,minDepth:4,edgeDensity:0,motion:0,
+    dominantWavelengthNm:null,spectral:[],hotspots:[],grid:[],gridSize:10,
+    cones:{L:0,M:0,S:0}, peripheralBlur:0, adaptationState:0,
+    wavelengthHistogram:[], coneContrast:0,
+    fovea:{gx:5,gy:5}, saccadeActive:false, habituatedCells:0, acuityMap:[]};
+}
+function emptyTouch(){
+  return {contact:false,objectId:null,surface:null,approximateSize:null,curvature:null,hardness:null,
+    texture:null,temperatureC:null,materialFeel:null,forceN:null,moving:false,frictionHint:null,
+    wetness:0, vibration:0, pressureGradient:0};
+}
+const bodies = {};
+function pushCap(arr,item,cap){const n=[...arr,item];return n.length>cap?n.slice(n.length-cap):n}
+function logSense(kind,text){
+  S.senseTimeline=pushCap(S.senseTimeline,{id:uid("sense"),t:Date.now(),kind,text},60);
+}
+
+/* ---------------- exploration grid / frontier picking ---------------- */
+function cellKey(x,z){
+  return `${Math.round(x/S.cellSize)},${Math.round(z/S.cellSize)}`;
+}
+function markVisited(x,z){
+  S.visitedCells[cellKey(x,z)]=Date.now();
+}
+function allCells(){
+  const half=Math.floor((ROOM_HALF*0.92)/S.cellSize);
+  const out=[];
+  for(let gx=-half; gx<=half; gx++){
+    for(let gz=-half; gz<=half; gz++){
+      out.push({gx,gz,x:gx*S.cellSize,z:gz*S.cellSize});
+    }
+  }
+  return out;
+}
+function pickFrontierCell(pose){
+  const cells=allCells();
+  const unvisited=cells.filter(c=>!S.visitedCells[cellKey(c.x,c.z)]);
+  const pool=unvisited.length?unvisited:cells;
+  // score: unvisited cells preferred; among ties, farther-but-reachable and not directly behind a wall wins;
+  // for revisits, prefer the stalest (oldest last-visited) cell.
+  let best=null, bestScore=-Infinity;
+  for(const c of pool){
+    const d=Math.hypot(c.x-pose.x,c.z-pose.z);
+    if(d<0.35) continue;
+    const staleness=unvisited.length?1:(Date.now()-(S.visitedCells[cellKey(c.x,c.z)]||0))/60000;
+    const score=(unvisited.length?2:0)+staleness-Math.abs(d-2.6)*0.08;
+    if(score>bestScore){bestScore=score; best=c;}
+  }
+  return best;
+}
+
+/* ---------------- stuck detection ---------------- */
+function trackStuck(dt,intendedMove){
+  S.posAcc+=dt;
+  const a=S.agent;
+  if(S.posAcc>=0.3){
+    S.posAcc=0;
+    S.posHistory=pushCap(S.posHistory,{x:a.x,z:a.z,t:performance.now()},8);
+    markVisited(a.x,a.z);
+  }
+  if(S.posHistory.length<4) return false;
+  const first=S.posHistory[0], last=S.posHistory[S.posHistory.length-1];
+  const drift=Math.hypot(last.x-first.x,last.z-first.z);
+  const elapsed=(last.t-first.t)/1000;
+  const oscillating=(()=>{
+    const h=S.actionHistory.slice(-4);
+    if(h.length<4) return false;
+    const isFwd=x=>x==="forward"||x==="explore"||x==="investigate";
+    const isBack=x=>x==="back";
+    return isFwd(h[0])&&isBack(h[1])&&isFwd(h[2])&&isBack(h[3]);
+  })();
+  if(intendedMove && elapsed>1.0 && drift<0.18){
+    S.stuckLevel=(S.stuckLevel||0)+1;
+  } else if(oscillating){
+    S.stuckLevel=(S.stuckLevel||0)+2;
+  } else if(S.nearestObstacleM<0.35 && intendedMove){
+    S.stuckLevel=(S.stuckLevel||0)+1;
+  } else {
+    S.stuckLevel=Math.max(0,(S.stuckLevel||0)-1);
+  }
+  return S.stuckLevel>=2;
+}
+function beginRecovery(){
+  if(S.recovering) return;
+  S.recovering=true; S.recoverT=0; S.stuckLevel=0;
+  S.recoverPhase="reverse"; // reverse → turn → go
+  S.navTarget=null; S.navLabel=null; S.exploreTarget=null; S.seekX=S.seekZ=null;
+  // keep huntId only if food is still reachable; otherwise clear
+  if(S.huntId){
+    const o=S.objects.find(x=>x.id===S.huntId);
+    if(!o) S.huntId=null;
+  }
+  const a=S.agent;
+  const openLeft=rayDistance(a.x,a.z,a.yaw+Math.PI/2,3.5);
+  const openRight=rayDistance(a.x,a.z,a.yaw-Math.PI/2,3.5);
+  S.recoverYaw=openLeft>openRight?1:-1;
+  pushMono("I'm stuck. Backing up and turning toward open space.");
+  logSense("stuck","Stuck — reverse, turn, reassess.");
+  S.activity=pushCap(S.activity,{id:uid("act"),t:Date.now(),text:"Recovery: reverse + turn."},40);
+}
+function rayDistance(x,z,yaw,maxDist){
+  if(typeof structure==="undefined") return maxDist;
+  const origin=new THREE.Vector3(x,0.95,z);
+  const dir=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)).normalize();
+  const ray=new THREE.Raycaster(origin,dir,0.02,maxDist);
+  const hits=ray.intersectObjects(structure.children,true);
+  const meshes=(typeof meshMap!=="undefined")?[...meshMap.values()]:[];
+  const objHits=meshes.length?ray.intersectObjects(meshes,true):[];
+  const all=[...hits,...objHits].sort((p,q)=>p.distance-q.distance);
+  return all.length?all[0].distance:maxDist;
+}
+
+try{
+  const saved=JSON.parse(localStorage.getItem(CFG_KEY)||"null");
+  if(saved){
+    Object.assign(S,{
+      provider:saved.provider||"groq",
+      apiKey:saved.apiKey||"", model:saved.model||S.model, customModel:saved.customModel||"",
+      temperature:saved.temperature??S.temperature, maxTokens:saved.maxTokens??S.maxTokens,
+      thinkingIntervalMs:Math.max(saved.thinkingIntervalMs??S.thinkingIntervalMs, 7000),
+      visionResolution:saved.visionResolution??128, aiSpeed:saved.aiSpeed??1,
+      simSpeed:saved.simSpeed??1, sensorHz:saved.sensorHz??6, fov:saved.fov??70,
+      masterVolume:saved.masterVolume??0.7,
+    });
+  }
+}catch{}
+function persistCfg(){
+  localStorage.setItem(CFG_KEY, JSON.stringify({
+    provider:S.provider, apiKey:S.apiKey, model:S.model, customModel:S.customModel, temperature:S.temperature,
+    maxTokens:S.maxTokens, thinkingIntervalMs:S.thinkingIntervalMs, visionResolution:S.visionResolution,
+    aiSpeed:S.aiSpeed, simSpeed:S.simSpeed, sensorHz:S.sensorHz, fov:S.fov, masterVolume:S.masterVolume,
+  }));
+}
+
+/* ---------------- audio ---------------- */
+let actx=null;
+function unlockAudio(){
+  try{actx=actx||new AudioContext(); if(actx.state==="suspended") actx.resume();}catch{}
+}
+function playTone({frequency,volume,durationMs,waveform,pan}){
+  try{
+    unlockAudio(); if(!actx) return;
+    const o=actx.createOscillator(), g=actx.createGain(), p=actx.createStereoPanner();
+    o.type = waveform==="noise" ? "square" : (waveform||"sine");
+    o.frequency.value=frequency;
+    p.pan.value=clamp(pan??0,-1,1);
+    g.gain.value=Math.max(0.01,(volume??0.4)*0.18);
+    o.connect(p); p.connect(g); g.connect(actx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + (durationMs||400)/1000);
+    o.stop(actx.currentTime + (durationMs||400)/1000 + 0.05);
+  }catch{}
+}
+
+/* ---------------- Music & Audio Lab: continuous playback ----------------
+   Unlike one-shot playTone bursts, this drives sustained oscillator(s) so the
+   agent's simulated hearing can sample an ongoing sound and notice changes. */
+function audioLabStart(){
+  try{
+    unlockAudio(); if(!actx) return;
+    audioLabStop(false);
+    const lab=S.audioLab;
+    const g=actx.createGain(); g.gain.value=Math.max(0.001,lab.volume*S.masterVolume*0.22);
+    g.connect(actx.destination);
+    const o=actx.createOscillator(); o.type=lab.waveform; o.frequency.value=lab.freq;
+    o.connect(g); o.start();
+    lab.node=o; lab.gain=g;
+    if(lab.freq2>0){
+      const o2=actx.createOscillator(); o2.type=lab.waveform; o2.frequency.value=lab.freq2;
+      o2.connect(g); o2.start();
+      lab.node2=o2;
+    }
+    lab.playing=true; lab.lastSentFreq=null; lab.lastSentAmp=null;
+  }catch{}
+}
+function audioLabStop(clearFlag=true){
+  const lab=S.audioLab;
+  try{ lab.node&&lab.node.stop(); }catch{}
+  try{ lab.node2&&lab.node2.stop(); }catch{}
+  lab.node=null; lab.node2=null; lab.gain=null;
+  if(clearFlag) lab.playing=false;
+}
+function audioLabSetVolume(v){
+  const lab=S.audioLab; lab.volume=v;
+  if(lab.gain) lab.gain.gain.value=Math.max(0.001,v*S.masterVolume*0.22);
+}
+function audioLabSetFreq(v,which=1){
+  const lab=S.audioLab;
+  if(which===1){ lab.freq=v; if(lab.node) lab.node.frequency.value=v; }
+  else { lab.freq2=v; if(v>0 && !lab.node2 && lab.playing) audioLabStart(); else if(lab.node2) lab.node2.frequency.value=v; else if(v<=0 && lab.node2){ try{lab.node2.stop()}catch{} lab.node2=null; } }
+}
+/* Called on the sensor tick: only emits a hearing EVENT when something meaningful
+   changed (new sound, stopped sound, frequency shift, big amplitude shift) — never
+   floods the AI with an event for an unchanged tone. */
+function sampleAudioLab(){
+  const lab=S.audioLab;
+  if(!lab.playing){
+    if(lab.lastSentFreq!=null){
+      S.hearing=pushCap(S.hearing, {id:uid("snd"),frequencyHz:0,harmonics:[],amplitude:0,durationMs:200,
+        azimuthDeg:0,elevationDeg:0,distanceM:0,waveform:lab.waveform,ageMs:0,changeNote:"Sound source stopped."}, 6);
+      logSense("hearing","Audio lab tone stopped.");
+      lab.lastSentFreq=null; lab.lastSentAmp=null;
+    }
+    return;
+  }
+  const freqChanged = lab.lastSentFreq==null || Math.abs(lab.freq-lab.lastSentFreq)>=15;
+  const ampChanged = lab.lastSentAmp==null || Math.abs(lab.volume-lab.lastSentAmp)>=0.08;
+  if(!freqChanged && !ampChanged) return;
+  let changeNote="New sound began.";
+  if(lab.lastSentFreq!=null){
+    const delta=Math.round(lab.freq-lab.lastSentFreq);
+    changeNote = delta===0 ? "Amplitude changed." : `Frequency ${delta>0?"increased":"decreased"} by ${Math.abs(delta)} Hz.`;
+  }
+  const ev=makeAuditoryEvent({id:uid("snd"),frequency:lab.freq,amplitude:lab.volume,durationMs:600,waveform:lab.waveform,src:lab.pos,listener:S.agent});
+  ev.changeNote=changeNote;
+  S.hearing=pushCap(S.hearing, ev, 6);
+  logSense("hearing",`Hearing event: ${lab.freq} Hz, ${changeNote}`);
+  lab.lastSentFreq=lab.freq; lab.lastSentAmp=lab.volume;
+}
+
+/* ---------------- physics ---------------- */
+function radiusXZ(o){return 0.5*Math.max(Math.abs(o.scale[0]),Math.abs(o.scale[2]))*(o.shape==="sphere"?1:1.05)}
+function radiusXYZ(o){return 0.5*Math.max(Math.abs(o.scale[0]),Math.abs(o.scale[1]),Math.abs(o.scale[2]))}
+function stepPhysics(dt){
+  const t=Math.min(dt,0.05)*S.simSpeed;
+  if(t<=0) return;
+  for(const o of S.objects){
+    if(!o.collision || o.id===S.heldId || o.locked || o.shape==="plane") continue;
+    const b=bodies[o.id]??={vx:0,vy:0,vz:0};
+    b.vy-=9.4*t;
+    o.position[0]+=b.vx*t; o.position[1]+=b.vy*t; o.position[2]+=b.vz*t;
+    const halfY=0.5*Math.abs(o.scale[1]);
+    if(o.position[1]<halfY){
+      o.position[1]=halfY;
+      if(b.vy<0) b.vy=-b.vy*o.restitution;
+      b.vx*=1-Math.min(0.98,o.friction*t*4);
+      b.vz*=1-Math.min(0.98,o.friction*t*4);
+      if(Math.abs(b.vy)<0.12) b.vy=0;
+    }
+    const rad=radiusXZ(o);
+    o.position[0]=clamp(o.position[0],-ROOM_HALF+rad,ROOM_HALF-rad);
+    o.position[2]=clamp(o.position[2],-ROOM_HALF+rad,ROOM_HALF-rad);
+    if(o.position[1]>3.2){o.position[1]=3.2;b.vy=0}
+  }
+  for(let i=0;i<S.objects.length;i++){
+    for(let j=i+1;j<S.objects.length;j++){
+      resolvePair(S.objects[i],S.objects[j]);
+    }
+  }
+}
+function resolvePair(a,b){
+  if(!a.collision||!b.collision) return;
+  if(a.id===S.heldId||b.id===S.heldId) return;
+  const ra=radiusXYZ(a), rb=radiusXYZ(b);
+  const dx=b.position[0]-a.position[0], dy=b.position[1]-a.position[1], dz=b.position[2]-a.position[2];
+  const dist=Math.hypot(dx,dy,dz)||1e-4;
+  const min=ra+rb; if(dist>=min) return;
+  const nx=dx/dist, ny=dy/dist, nz=dz/dist, overlap=min-dist;
+  const ma=a.mass||1, mb=b.mass||1, sum=ma+mb;
+  if(!a.locked){a.position[0]-=nx*overlap*(mb/sum);a.position[1]-=ny*overlap*(mb/sum);a.position[2]-=nz*overlap*(mb/sum)}
+  if(!b.locked){b.position[0]+=nx*overlap*(ma/sum);b.position[1]+=ny*overlap*(ma/sum);b.position[2]+=nz*overlap*(ma/sum)}
+  const ba=bodies[a.id]??={vx:0,vy:0,vz:0};
+  const bb=bodies[b.id]??={vx:0,vy:0,vz:0};
+  const rv=(bb.vx-ba.vx)*nx+(bb.vy-ba.vy)*ny+(bb.vz-ba.vz)*nz;
+  if(rv>0) return;
+  const e=Math.min(a.restitution,b.restitution);
+  const j=(-(1+e)*rv)/(1/ma+1/mb);
+  ba.vx-=(j/ma)*nx; ba.vy-=(j/ma)*ny; ba.vz-=(j/ma)*nz;
+  bb.vx+=(j/mb)*nx; bb.vy+=(j/mb)*ny; bb.vz+=(j/mb)*nz;
+}
+function collideAgent(x,z){
+  const lim=ROOM_HALF-AGENT_R-0.08;
+  let px=clamp(x,-lim,lim);
+  let pz=clamp(z,-lim,lim);
+  for(const o of S.objects){
+    if(!o.collision||o.id===S.heldId) continue;
+    const r=radiusXZ(o)+AGENT_R;
+    const dx=px-o.position[0], dz=pz-o.position[2];
+    const d=Math.hypot(dx,dz);
+    const vertical=Math.abs(0.9-o.position[1])<r+0.6;
+    if(vertical&&d<r&&d>1e-5){const k=(r-d)/d; px+=dx*k; pz+=dz*k;}
+  }
+  return {x:clamp(px,-lim,lim), z:clamp(pz,-lim,lim)};
+}
+
+/* ---------------- sensors ---------------- */
+function updateGaze(gridSize, cells){
+  // saccades: snap gaze toward highest-interest cell; micro-tremors always
+  const g=S.gaze;
+  g.microTremor=[(Math.random()-0.5)*0.35, (Math.random()-0.5)*0.35];
+  if(!S.complexMode){ g.foveaGx=gridSize/2; g.foveaGy=gridSize/2; return false; }
+  // pick interest target occasionally
+  const now=performance.now();
+  if(now-g.lastSaccade>400+Math.random()*900){
+    let best=null,bestScore=-1;
+    cells.forEach((c,i)=>{
+      const score=c.brightness*(0.3+c.edge)+(c.wavelengthNm?0.4:0)+(c.habituated? -0.5:0);
+      if(score>bestScore){bestScore=score; best=i;}
+    });
+    if(best!=null){
+      g.targetGx=best%gridSize; g.targetGy=Math.floor(best/gridSize);
+      g.saccadeT=0.12+Math.random()*0.08;
+      g.lastSaccade=now;
+    }
+  }
+  const saccading=g.saccadeT>0;
+  if(saccading){
+    g.saccadeT-=0.016;
+    g.foveaGx += (g.targetGx-g.foveaGx)*0.45;
+    g.foveaGy += (g.targetGy-g.foveaGy)*0.45;
+  } else {
+    // micro-fixation drift
+    g.foveaGx=clamp(g.foveaGx+g.microTremor[0]*0.08, 0, gridSize-1);
+    g.foveaGy=clamp(g.foveaGy+g.microTremor[1]*0.08, 0, gridSize-1);
+  }
+  return saccading;
+}
+function processVision(rgba, depth, prev, res, fov){
+  const n=res*res, gridSize=GRID, cell=res/gridSize;
+  const cells=[]; const spec={long:0,yellow:0,mid:0,short:0,violet:0,broad:0};
+  let brightSum=0, depthSum=0, depthMin=99, edgeSum=0, motion=0, waveSum=0, waveW=0;
+  let coneL=0, coneM=0, coneS=0, coneN=0;
+  const hist={};
+  const now=Date.now();
+  // first pass: raw cell stats
+  const rawCells=[];
+  for(let gy=0; gy<gridSize; gy++){
+    for(let gx=0; gx<gridSize; gx++){
+      let rS=0,gS=0,bS=0,dS=0,eS=0,count=0;
+      const x0=Math.floor(gx*cell), y0=Math.floor(gy*cell);
+      const x1=Math.floor((gx+1)*cell), y1=Math.floor((gy+1)*cell);
+      for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
+        const i=(y*res+x)*4;
+        let r=rgba[i]/255,g=rgba[i+1]/255,b=rgba[i+2]/255;
+        rS+=r;gS+=g;bS+=b;
+        const d=depth[y*res+x]??8; dS+=d; if(d<depthMin) depthMin=d;
+        const lum=luminance(r,g,b); brightSum+=lum;
+        if(x+1<res&&y+1<res){
+          const iR=(y*res+x+1)*4, iD=((y+1)*res+x)*4;
+          const gxL=luminance(rgba[iR]/255,rgba[iR+1]/255,rgba[iR+2]/255)-lum;
+          const gyL=luminance(rgba[iD]/255,rgba[iD+1]/255,rgba[iD+2]/255)-lum;
+          const mag=Math.min(1,Math.hypot(gxL,gyL)*3); eS+=mag; edgeSum+=mag;
+        }
+        if(prev) motion+=(Math.abs(rgba[i]-prev[i])+Math.abs(rgba[i+1]-prev[i+1])+Math.abs(rgba[i+2]-prev[i+2]))/765;
+        count++;
+      }
+      const inv=1/Math.max(1,count);
+      const rr=rS*inv,gg=gS*inv,bb=bS*inv;
+      const nm=rgbToWavelengthNm(rr,gg,bb);
+      const br=luminance(rr,gg,bb);
+      const cones=rgbToCones(rr,gg,bb);
+      rawCells.push({gx,gy,rr,gg,bb,br,nm,d:dS*inv,e:eS*inv,cones});
+    }
+  }
+  // gaze / saccade toward interesting cells
+  const tempForGaze=rawCells.map(c=>({brightness:c.br,edge:c.e,wavelengthNm:c.nm,habituated:false}));
+  const saccading=updateGaze(gridSize, tempForGaze);
+  const fGx=S.gaze.foveaGx, fGy=S.gaze.foveaGy;
+  let habituatedCount=0;
+  const acuityMap=[];
+
+  for(const rc of rawCells){
+    const {gx,gy,rr,gg,bb,br,nm,d,e,cones}=rc;
+    // foveated acuity: distance from fovea in grid cells
+    const distF=Math.hypot(gx-fGx, gy-fGy);
+    // high-res only within ~1.5 cells of fovea (≈ central 2° simulation); then rapid falloff
+    let acuity=1;
+    if(S.complexMode){
+      if(distF<1.2) acuity=1;
+      else if(distF<2.5) acuity=0.55;
+      else if(distF<4) acuity=0.28;
+      else acuity=0.12;
+      // circadian / fatigue degrade peripheral further
+      acuity*=0.7+0.3*S.circadian.alertness;
+    }
+    acuityMap.push(round(acuity));
+    // apply foveated degradation: quantize / blur low-acuity cells
+    let brOut=br, nmOut=nm, eOut=e, conesOut=cones;
+    if(acuity<0.5){
+      brOut=Math.round(br*4)/4; // coarse brightness
+      eOut=Math.round(e*2)/2;
+      if(acuity<0.25){ nmOut=nm!=null?Math.round(nm/40)*40:null; } // coarse wavelength bins
+      conesOut={L:round(cones.L*acuity), M:round(cones.M*acuity), S:round(cones.S*acuity)};
+    }
+    // habituation: walls/floor (low edge, no peak λ) suppress faster (~12s); other baselines ~45s
+    let habituated=false;
+    if(S.complexMode){
+      const structureLike = !nmOut && eOut<0.12;
+      const thresh = structureLike ? 12 : 45;
+      const sig=`${gx},${gy}:${nmOut??"ach"}:${Math.round(brOut*5)}`;
+      const prevH=S.habituated[sig];
+      if(prevH){
+        const stable=(now-prevH.lastChange)/1000;
+        if(stable>thresh && Math.abs((prevH.br||brOut)-brOut)<0.07){
+          habituated=true; habituatedCount++;
+          prevH.stableFor=stable; prevH.suppressed=true;
+          brOut*=structureLike?0.08:0.15; eOut*=structureLike?0.1:0.2;
+        } else if(Math.abs((prevH.br||brOut)-brOut)>=0.07){
+          prevH.lastChange=now; prevH.br=brOut; prevH.suppressed=false;
+        }
+      } else {
+        S.habituated[sig]={lastChange:now, br:brOut, stableFor:0, suppressed:false};
+      }
+      // prune old habituation keys occasionally
+      if(Object.keys(S.habituated).length>200){
+        const keys=Object.keys(S.habituated);
+        keys.slice(0,80).forEach(k=>delete S.habituated[k]);
+      }
+    }
+    coneL+=conesOut.L*brOut; coneM+=conesOut.M*brOut; coneS+=conesOut.S*brOut; coneN+=brOut;
+    if(nmOut!=null && !habituated){
+      waveSum+=nmOut*brOut; waveW+=brOut;
+      const bin=Math.round(nmOut/20)*20;
+      hist[bin]=(hist[bin]||0)+brOut;
+      if(nmOut>=620) spec.long+=brOut; else if(nmOut>=570) spec.yellow+=brOut;
+      else if(nmOut>=495) spec.mid+=brOut; else if(nmOut>=450) spec.short+=brOut; else spec.violet+=brOut;
+    } else if(!habituated) spec.broad+=brOut;
+    const isPeriph=distF>3;
+    cells.push({
+      brightness:round(brOut), wavelengthNm:nmOut?Math.round(nmOut):null,
+      depthM:round(d), edge:round(eOut), r:round(rr), g:round(gg), b:round(bb),
+      cones:conesOut, peripheral:isPeriph, acuity:round(acuity), habituated, foveal:distF<1.5
+    });
+    depthSum+=d;
+  }
+  const tot=spec.long+spec.yellow+spec.mid+spec.short+spec.violet+spec.broad||1;
+  const regions=["far-left","left","centre-left","centre-right","right","far-right"];
+  const hotspots=[];
+  cells.map((c,i)=>({c,i,score:(c.habituated?0.1:1)*(c.brightness*(0.4+c.edge)+(c.wavelengthNm?0.25:0)+c.acuity*0.3)}))
+    .sort((a,b)=>b.score-a.score).slice(0,6).forEach(h=>{
+      const gx=h.i%gridSize, gy=Math.floor(h.i/gridSize);
+      const lr=regions[Math.min(5,Math.floor((gx/gridSize)*6))];
+      const ud=gy<2?"upper":gy>7?"lower":"mid";
+      hotspots.push({region:`${ud}-${lr}`,wavelengthNm:h.c.wavelengthNm,brightness:h.c.brightness,depth:h.c.depthM,cones:h.c.cones,acuity:h.c.acuity,foveal:h.c.foveal});
+    });
+  let bestBin=null, bestBinW=0;
+  for(const [bin,w] of Object.entries(hist)){ if(w>bestBinW){bestBinW=w; bestBin=Number(bin);} }
+  // Human-like brightness: weight fovea + brighter cells so dark ceiling/corners don't make the whole field "dim"
+  const sortedBr=cells.map(c=>c.brightness).sort((a,b)=>b-a);
+  const topN=Math.max(1, Math.floor(sortedBr.length*0.25));
+  const peakBright=sortedBr.slice(0,topN).reduce((a,b)=>a+b,0)/topN;
+  const fovealCells=cells.filter(c=>c.foveal);
+  const fovealBright=fovealCells.length?fovealCells.reduce((a,c)=>a+c.brightness,0)/fovealCells.length:peakBright;
+  const meanBright=brightSum/n;
+  const perceivedBright=clamp(meanBright*0.35 + peakBright*0.4 + fovealBright*0.25, 0, 1);
+  if(S.complexMode){
+    if(perceivedBright<0.12) S.adaptation.dark=clamp(S.adaptation.dark+0.04,0,1);
+    else S.adaptation.dark=clamp(S.adaptation.dark-0.06,0,1);
+    if(perceivedBright>0.75) S.adaptation.bright=clamp(S.adaptation.bright+0.05,0,1);
+    else S.adaptation.bright=clamp(S.adaptation.bright-0.07,0,1);
+    S.adaptation.lastMeanBright=perceivedBright;
+  }
+  const invC=1/Math.max(0.01,coneN);
+  const conesAvg={L:round(coneL*invC),M:round(coneM*invC),S:round(coneS*invC)};
+  const coneContrast=round(Math.max(conesAvg.L,conesAvg.M,conesAvg.S)-Math.min(conesAvg.L,conesAvg.M,conesAvg.S));
+  const histArr=Object.entries(hist).map(([nm,w])=>({nm:Number(nm),weight:round(w)})).sort((a,b)=>b.weight-a.weight).slice(0,8);
+  return {
+    resolution:res,fov:fov+(S.complexMode?S.peripheralFovExtra:0),
+    meanBrightness:round(perceivedBright), rawMeanBrightness:round(meanBright), peakBrightness:round(peakBright),
+    meanDepth:round(depthSum/cells.length),
+    minDepth:round(depthMin),edgeDensity:round(edgeSum/n),motion:round(motion/n),
+    dominantWavelengthNm:bestBinW>0.02?bestBin:(waveW>0.01?Math.round(waveSum/waveW):null),
+    spectral:[
+      {band:"long-wave (red)",rangeNm:"620–750",share:round(spec.long/tot)},
+      {band:"yellow-orange",rangeNm:"570–620",share:round(spec.yellow/tot)},
+      {band:"mid-wave (green)",rangeNm:"495–570",share:round(spec.mid/tot)},
+      {band:"short-wave (blue)",rangeNm:"450–495",share:round(spec.short/tot)},
+      {band:"violet",rangeNm:"380–450",share:round(spec.violet/tot)},
+      {band:"broadband / achromatic",rangeNm:"mixed",share:round(spec.broad/tot)},
+    ].filter(s=>s.share>0.015),
+    hotspots, grid:cells, gridSize,
+    cones:conesAvg, coneContrast, wavelengthHistogram:histArr,
+    peripheralBlur:S.complexMode?round((S.adaptation.dark*0.4+S.adaptation.bright*0.3+(1-S.circadian.alertness)*0.2)):0,
+    adaptationState:S.complexMode?round(S.adaptation.dark-S.adaptation.bright):0,
+    fovea:{gx:round(fGx), gy:round(fGy)}, saccadeActive:saccading,
+    habituatedCells:habituatedCount, acuityMap,
+  };
+}
+function curvatureOf(shape){
+  if(shape==="sphere") return "convex-spherical";
+  if(shape==="box"||shape==="plane") return "planar-faces / sharp edges";
+  if(shape==="cylinder"||shape==="capsule") return "cylindrical";
+  if(shape==="cone"||shape==="pyramid") return "tapered / pointed";
+  if(shape==="torus") return "ring / concave inner";
+  return "irregular";
+}
+function materialFeel(mat,hardness,friction){
+  if(mat==="metal") return "cold, rigid, smooth";
+  if(mat==="glass") return "cool, hard, slick";
+  if(mat==="rubber") return "warm, yielding, high grip";
+  if(mat==="emissive") return "slightly warm, rigid";
+  if(mat==="glossy") return hardness>0.7?"hard, polished":"smooth, moderate give";
+  if(mat==="food") return "soft, yielding, organic";
+  return friction>0.6?"dry, matte, grippy":"dry, matte";
+}
+function textureFeel(tex,mat){
+  if(tex==="checker"||tex==="stripes"||tex==="dots") return "patterned / periodic";
+  if(tex==="noise"||mat==="rubber") return "micro-rough";
+  if(mat==="metal"||mat==="glass") return "smooth";
+  if(mat==="food") return "slightly moist, irregular";
+  return "fine matte";
+}
+function sampleTouch(hand){
+  let best=null;
+  for(const o of S.objects){
+    const r=radiusXYZ(o)+0.12;
+    const d=Math.hypot(hand[0]-o.position[0],hand[1]-o.position[1],hand[2]-o.position[2]);
+    if(d<r && (!best||d<best.d)) best={o,d};
+  }
+  if(!best) return emptyTouch();
+  const o=best.o, body=bodies[o.id];
+  const force=round((o.mass||1)*0.35+o.hardness*1.4);
+  // nociception spike on hard impact or extreme temp
+  if(S.complexMode){
+    if(force>2.2 || o.hardness>0.9) S.nociception.mechanical=clamp(S.nociception.mechanical+0.25,0,1);
+    if(o.temperature>38 || o.temperature<8) S.nociception.thermal=clamp(S.nociception.thermal+0.2,0,1);
+    S.nociception.active = S.nociception.mechanical>0.3 || S.nociception.thermal>0.3 || S.nociception.chemical>0.3;
+  }
+  return {
+    contact:true, objectId:o.id, surface:[round(o.position[0]),round(o.position[1]),round(o.position[2])],
+    approximateSize:round(radiusXYZ(o)*2), curvature:curvatureOf(o.shape), hardness:o.hardness,
+    texture:textureFeel(o.texture,o.material), temperatureC:o.temperature,
+    materialFeel:materialFeel(o.material,o.hardness,o.friction),
+    forceN:force,
+    moving:!!body && Math.hypot(body.vx,body.vy,body.vz)>0.15, frictionHint:o.friction,
+    wetness:o.material==="food"?0.4:0, vibration:!!body && Math.hypot(body.vx,body.vy,body.vz)>0.4?0.5:0,
+    pressureGradient:round(force*0.3),
+  };
+}
+function makeAuditoryEvent({id,frequency,amplitude,durationMs,waveform,src,listener}){
+  const dx=src[0]-listener.x, dy=src[1]-listener.y, dz=src[2]-listener.z;
+  const dist=Math.max(0.05,Math.hypot(dx,dy,dz));
+  const worldYaw=Math.atan2(-dx,-dz);
+  let az=((worldYaw-listener.yaw)*180)/Math.PI;
+  while(az>180) az-=360; while(az<-180) az+=360;
+  const el=(Math.atan2(dy,Math.hypot(dx,dz))*180)/Math.PI;
+  return {
+    id, frequencyHz:frequency, harmonics:[frequency*2,frequency*3].map(n=>Math.round(n)),
+    amplitude:round(amplitude*(1/(1+dist*0.45))), durationMs, azimuthDeg:Math.round(az),
+    elevationDeg:Math.round(el), distanceM:round(dist), waveform, ageMs:0,
+  };
+}
+
+/* ---------------- brain ---------------- */
+function encodeVision(v){
+  const base={
+    resolution:`${v.resolution}x${v.resolution}`, fovDeg:v.fov,
+    meanBrightness:v.meanBrightness, meanDepthM:v.meanDepth, nearestDepthM:v.minDepth,
+    edgeDensity:v.edgeDensity, motionMagnitude:v.motion, dominantWavelengthNm:v.dominantWavelengthNm,
+    spectralMix:v.spectral, spatialHotspots:v.hotspots,
+    gridNote:`${v.gridSize}x${v.gridSize} cells, row-major from top-left; acuity is foveated`,
+    grid:v.grid.map(c=>({B:round(c.brightness),nm:c.wavelengthNm,z:round(c.depthM),e:round(c.edge),L:c.cones?.L,M:c.cones?.M,S:c.cones?.S,periph:!!c.peripheral,acuity:c.acuity,hab:!!c.habituated,fov:!!c.foveal})),
+    conesLMS:v.cones, coneContrast:v.coneContrast, wavelengthHistogram:v.wavelengthHistogram,
+  };
+  if(S.complexMode){
+    base.peripheralBlur=v.peripheralBlur;
+    base.adaptationState=v.adaptationState;
+    base.fovea=v.fovea;
+    base.saccadeActive=v.saccadeActive;
+    base.habituatedCells=v.habituatedCells;
+    base.note="Fovea is sharp; periphery is coarse/blurred. Habituated cells are suppressed baselines. Saccades snap gaze to interest.";
+  }
+  return base;
+}
+function neuroPromptModifier(){
+  if(!S.complexMode) return "";
+  const c=S.neuro.cortisol, a=S.neuro.adrenaline, d=S.neuro.dopamine, o=S.neuro.oxytocin, s=S.neuro.serotonin;
+  const alert=S.circadian.alertness, bat=S.metabolic.battery, life=S.lifespanHours;
+  let parts=[];
+  if(c>0.7 || a>0.8) parts.push("HIGH cortisol/adrenaline: terrified, hyper-alert. Shorten thought. Prioritise survival (flee/back).");
+  else if(c>0.45 || a>0.5) parts.push("Elevated stress: cautious, quick actions.");
+  else if(c<0.25 && a<0.25) parts.push("Calm: respond thoughtfully.");
+  if(d>0.7) parts.push("High dopamine: rewarded, curious — explore thoroughly.");
+  if(o>0.6) parts.push("Elevated oxytocin: mild social warmth toward operator notes.");
+  if(s<0.3) parts.push("Low serotonin: flat mood, less initiative.");
+  if(alert<0.4) parts.push(`Circadian night/low alertness (${round(alert)}): slower, shorter responses, prefer rest.`);
+  if(bat<0.3) parts.push(`Battery critical (${Math.round(bat*100)}%): conserve, seek rest or food.`);
+  if(life<12) parts.push(`Mortality awareness: ~${round(life)}h estimated remaining — prioritise meaningful exploration over idle loops.`);
+  if(S.innerCriticNote) parts.push("Inner critic: "+S.innerCriticNote);
+  if(S.tipOfTongue) parts.push("Tip-of-tongue: you only have fragments "+JSON.stringify(S.tipOfTongue.clues)+" — do not invent the full label yet.");
+  if(!parts.length) parts.push(`Neuro: DA=${round(d)} CT=${round(c)} AD=${round(a)} OX=${round(o)} SE=${round(s)}; alert=${round(alert)}`);
+  return "\n[Human-like state: "+parts.join(" ")+"]";
+}
+function buildUserPayload(){
+  const payload={
+    frameId:S.frameId,
+    timeS:round(S.frameTimeS),
+    complexMode:S.complexMode,
+    proprioception:{
+      positionM:[round(S.agent.x),round(S.agent.y),round(S.agent.z)],
+      yawDeg:Math.round(S.agent.yaw*180/Math.PI),
+      pitchDeg:Math.round(S.agent.pitch*180/Math.PI),
+      handLocalM:S.agent.hand, holding:Boolean(S.heldId),
+    },
+    movement:{
+      velocityMS:round(Math.hypot(S.vAgentX||0,S.vAgentZ||0)),
+      distanceToNearestObstacleM:round(S.nearestObstacleM),
+      navigationTarget:S.navLabel||S.exploreLabel||null,
+      recovering:S.recovering,
+    },
+    vision:encodeVision(S.vision),
+    touch:S.touch.contact?{
+      contact:true, surfacePositionM:S.touch.surface, approximateExtentM:S.touch.approximateSize,
+      curvature:S.touch.curvature, hardness01:S.touch.hardness, texture:S.touch.texture,
+      temperatureC:S.touch.temperatureC, materialFeel:S.touch.materialFeel,
+      resistiveForceN:S.touch.forceN, surfaceGrip:S.touch.frictionHint, moving:S.touch.moving,
+      wetness:S.touch.wetness, vibration:S.touch.vibration, pressureGradient:S.touch.pressureGradient,
+    }:{contact:false},
+    hearing:S.hearing.length?{events:S.hearing.filter(e=>e.ageMs<250).map(e=>({
+      frequencyHz:e.frequencyHz,harmonicsHz:e.harmonics,amplitude:e.amplitude,durationMs:e.durationMs,
+      azimuthDeg:e.azimuthDeg,elevationDeg:e.elevationDeg,distanceM:e.distanceM,waveform:e.waveform,changeNote:e.changeNote||null,
+    }))}:{events:[],ambient:"quiet — no new hearing events"},
+    lastAction:S.action, currentObjective:S.objective,
+    driveMode:S.driveMode,
+    operatorNote:S.operatorNote||null,
+    memory:S.memory.slice(-8).map(m=>({kind:m.kind,note:m.summary})),
+    mission:S.mission,
+  };
+  if(S.complexMode){
+    payload.interoception={
+      baroception:round(S.intero.baro), chemoception:{O2:round(S.intero.chemoO2),CO2:round(S.intero.chemoCO2)},
+      osmoreception:round(S.intero.osmo), glucoreception:round(S.intero.gluco),
+      pulmonaryStretch:round(S.intero.pulmonary),
+    };
+    payload.equilibrioception={balanceTilt:round(S.proprio.balanceTilt), acceleration:S.proprio.accel.map(round)};
+    payload.proprioception.jointAngles=S.proprio.jointAngles;
+    payload.nociception={...S.nociception};
+    payload.thermoception={skinC:round(S.skinTempC), coreC:round(S.coreTempC)};
+    payload.neurochemical={dopamine:round(S.neuro.dopamine),cortisol:round(S.neuro.cortisol),adrenaline:round(S.neuro.adrenaline),oxytocin:round(S.neuro.oxytocin),serotonin:round(S.neuro.serotonin)};
+    payload.physiology={energy:round(S.energy),hunger:round(S.hunger),hydration:round(S.hydration),
+      stomach:{digesting:S.stomach.digesting,progress:round(S.stomach.progress),contents:S.stomach.contents.length}};
+    payload.circadian={phase:round(S.circadian.phase),alertness:round(S.circadian.alertness),efficiency:round(S.circadian.efficiency),sleepDebt:round(S.sleepDebt)};
+    payload.metabolic={battery:round(S.metabolic.battery),computeLoad:round(S.metabolic.computeLoad),memoryPressure:round(S.metabolic.memoryPressure),wear:round(S.metabolic.wear)};
+    payload.mortality={estimatedHoursRemaining:round(S.lifespanHours)};
+    payload.memory={
+      shortTerm:S.shortTermMem.slice(-6).map(m=>({kind:m.kind,note:m.summary})),
+      longTerm:S.longTermMem.slice(-4).map(m=>({emotion:m.emotion,summary:m.summary})),
+      tipOfTongue:S.tipOfTongue?{clues:S.tipOfTongue.clues,cyclesLeft:S.tipOfTongue.cyclesLeft}:null,
+      beliefs:S.beliefs.slice(-4),
+    };
+    payload.innerCritic=S.innerCriticNote||null;
+  }
+  return JSON.stringify(payload);
+}
+function parseDecision(raw){
+  const start=raw.indexOf("{"), end=raw.lastIndexOf("}");
+  const slice=start>=0&&end>start?raw.slice(start,end+1):"";
+  let thought="Interpreting the latest sensory frame.", objective="Explore", action="scan", amount=0.5, target=null, mission=null;
+  try{
+    const j=JSON.parse(slice);
+    if(typeof j.thought==="string") thought=j.thought.slice(0,220);
+    if(typeof j.objective==="string") objective=j.objective.slice(0,80);
+    if(typeof j.action==="string" && ACTIONS.includes(j.action)) action=j.action;
+    if(typeof j.amount==="number" && Number.isFinite(j.amount)) amount=clamp(j.amount,0.05,2);
+    if(typeof j.target==="string") target=j.target.slice(0,60);
+    if(j.mission && typeof j.mission==="object") mission=j.mission;
+  }catch{
+    const lower=raw.toLowerCase();
+    const hit=ACTIONS.find(a=>lower.includes(a.replace("_"," "))||lower.includes(a));
+    if(hit) action=hit;
+  }
+  return {thought,objective,action,amount,target,mission};
+}
+function wrapAngle(e){while(e>Math.PI)e-=Math.PI*2;while(e<-Math.PI)e+=Math.PI*2;return e}
+function yawTo(x,z,tx,tz){return Math.atan2(-(tx-x), -(tz-z))}
+function wallAhead(x,z,yaw,dist=1.2){
+  if(typeof structure==="undefined") return Math.max(Math.abs(x),Math.abs(z))>ROOM_HALF-0.7;
+  const origin=new THREE.Vector3(x,0.95,z);
+  const dir=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)).normalize();
+  const ray=new THREE.Raycaster(origin,dir,0.02,dist);
+  return ray.intersectObjects(structure.children,true).length>0;
+}
+function nearestBy(pred,pose){
+  const cand=S.objects.filter(pred);
+  if(!cand.length) return null;
+  return cand.sort((a,b)=>Math.hypot(a.position[0]-pose.x,a.position[2]-pose.z)-Math.hypot(b.position[0]-pose.x,b.position[2]-pose.z))[0];
+}
+function nearestFood(pose){ return nearestBy(o=>o.material==="food", pose); }
+function pickHunt(note,pose){
+  const n=(note||"").toLowerCase();
+  if(!n) return null;
+  // food / nutrient / eat / snack
+  if(/\b(food|nutrient|snack|eat|hungry|meal)\b/.test(n)){
+    const f=nearestFood(pose); if(f) return f.id;
+  }
+  const named=S.objects.find(o=>n.includes(String(o.name).toLowerCase()));
+  if(named) return named.id;
+  const shapeHit=["box","cube","block","sphere","orb","ball","cylinder","column","cone","pyramid","spire","torus","ring","capsule"].find(w=>n.includes(w));
+  const shapeMap={cube:"box",block:"box",orb:"sphere",ball:"sphere",column:"cylinder",pyramid:"cone",spire:"cone",ring:"torus"};
+  if(shapeHit){
+    const shape=shapeMap[shapeHit]||shapeHit;
+    const cand=S.objects.filter(o=>o.shape===shape);
+    if(cand.length) return cand.sort((a,b)=>Math.hypot(a.position[0]-pose.x,a.position[2]-pose.z)-Math.hypot(b.position[0]-pose.x,b.position[2]-pose.z))[0].id;
+  }
+  return null;
+}
+function setGoal(type, detail){
+  S.goal={type, detail:detail||"", started:Date.now(), status:"active"};
+  S.objective=detail||type;
+  S.goalFailStreak=0;
+}
+function completeGoal(reason){
+  if(S.goal) S.goal.status="done";
+  S.huntId=null; S.seekX=S.seekZ=null; S.navLabel=null; S.exploreTarget=null;
+  logSense("goal", reason||"Goal complete.");
+  S.monologue=pushCap(S.monologue||[],{t:Date.now(),text:`(self) ${reason||"Done."}`},30);
+}
+function steerPlan(pose,tx,tz,label){
+  const dist=Math.hypot(tx-pose.x,tz-pose.z);
+  S.seekX=tx; S.seekZ=tz; S.navLabel=label;
+  if(dist<0.55){
+    S.seekX=S.seekZ=null; S.navLabel=null;
+    return {thought:`Reached ${label}. Within reach.`, objective:"Inspect", action:"touch", amount:1};
+  }
+  return {thought:`Walking toward ${label}, ${dist.toFixed(1)} m.`, objective:"Approach "+label, action:"forward", amount:0.55};
+}
+function pushMono(text){
+  S.monologue=pushCap(S.monologue||[],{t:Date.now(),text:String(text).slice(0,240)},40);
+}
+function localDecide(){
+  const {vision,touch,hearing,agent:pose,memory}=S;
+  // HARD STOP for local-only mode; full AI mode relies more on the model to rest
+  const stepCap=S.useLocal?6:14;
+  if(S.driveMode==="autostop" && (S.stepsThisWake||0)>=stepCap){
+    pushMono("Step budget used. Stopping so the operator can reply.");
+    return {thought:"I've done enough this session. Resting — your turn.", objective:"Rest", action:"rest", amount:0};
+  }
+  // track boredom / same objective loops
+  if(S.objective===S.lastObjective) S.sameObjectiveSteps=(S.sameObjectiveSteps||0)+1;
+  else { S.sameObjectiveSteps=0; S.lastObjective=S.objective; }
+  if(S.sameObjectiveSteps>4) S.boredom=clamp((S.boredom||0)+0.2,0,1);
+  else S.boredom=clamp((S.boredom||0)-0.05,0,1);
+
+  // --- ALWAYS prioritize held food → eat (never drop food) ---
+  {
+    const held=S.heldId && S.objects.find(x=>x.id===S.heldId);
+    if(held && held.material==="food"){
+      pushMono("Nutrient is in my hand. Eating now — completing the goal.");
+      setGoal("food","Eat held nutrient");
+      return {thought:"Nutrient in hand — eating it now.", objective:"Eat food", action:"eat", amount:1};
+    }
+  }
+
+  // --- food / nutrients: hard priority if goal, note, objective, OR any food within 2.5 m ---
+  const foodNearby=nearestFood(pose);
+  const foodNearDist=foodNearby?Math.hypot(foodNearby.position[0]-pose.x, foodNearby.position[2]-pose.z):99;
+  const foodGoal = (S.goal && S.goal.type==="food" && S.goal.status!=="done")
+    || /food|nutrient|eat|hungry|snack/i.test(S.objective||"")
+    || /food|nutrient|eat/i.test(S.operatorNote||"")
+    || /food|nutrient|eat/i.test(S.thought||"")
+    || foodNearDist<2.5;
+  if(foodGoal){
+    if(foodNearby){
+      S.huntId=foodNearby.id;
+      setGoal("food","Acquire nutrient");
+      // generous reach — agent often stops short of 0.85
+      if(foodNearDist<1.35){
+        pushMono(`Nutrient ${foodNearDist.toFixed(2)} m away — grabbing.`);
+        return {thought:`Food is ${foodNearDist.toFixed(1)} m away. Picking it up.`, objective:"Pick up food", action:"pickup", amount:1};
+      }
+      pushMono(`Walking to nutrient (${foodNearDist.toFixed(1)} m).`);
+      return steerPlan(pose, foodNearby.position[0], foodNearby.position[2], "nutrient source");
+    }
+    // explicit food goal but nothing in the world
+    if(S.goal && S.goal.type==="food"){
+      S.goalFailStreak=(S.goalFailStreak||0)+1;
+      pushMono("No nutrient objects exist in the chamber.");
+      if(S.goalFailStreak>=2){
+        S.askPending="I can't find any food here. Please spawn food (Body → Spawn food) or give me a different goal.";
+        completeGoal("No food present — asking operator.");
+        return {thought:"No nutrients in the chamber. Asking you for help.", objective:"Ask operator", action:"rest", amount:0};
+      }
+      return {thought:"Searching for nutrient sources…", objective:"Find food", action:"explore", amount:0.5};
+    }
+  }
+
+  if(S.goal && S.goal.type==="food" && S.goal.status==="done"){
+    return {thought:"Food goal finished. Resting.", objective:"Rest", action:"rest", amount:0};
+  }
+
+  // Complex-mode survival priorities
+  if(S.complexMode){
+    if(S.neuro.cortisol>0.75 || S.neuro.adrenaline>0.85){
+      pushMono("Something feels threatening. I should get distance.");
+      return {thought:"Threat signals high. Backing away.", objective:"Survive", action:"flee", amount:1.2};
+    }
+    if(S.nociception.active && S.nociception.mechanical>0.5){
+      return {thought:"Pain on contact. Withdrawing.", objective:"Avoid damage", action:"back", amount:0.6};
+    }
+    if(S.energy<0.25 || S.metabolic.battery<0.2){
+      return {thought:"Energy critically low. Resting.", objective:"Conserve", action:"rest", amount:0};
+    }
+    if(S.circadian.alertness<0.3 && S.driveMode==="autostop"){
+      return {thought:"Night-phase alertness low. Resting.", objective:"Sleep pressure", action:"rest", amount:0};
+    }
+    if(S.neuro.cortisol>0.4 && Math.random()<0.25){
+      return {thought:"Elevated stress. Self-calming.", objective:"Regulate", action:"calm", amount:0.5};
+    }
+  }
+
+  // boredom → ask operator or rest
+  if(S.boredom>0.7 && S.driveMode==="autostop"){
+    S.askPending="I'm going in circles. What should I focus on next?";
+    pushMono("This is repetitive. I want a new instruction.");
+    S.boredom=0.2;
+    return {thought:"Bored of this loop. Asking the operator and resting.", objective:"Ask operator", action:"rest", amount:0};
+  }
+
+  // Multi-step mission
+  if(S.mission && S.mission.steps && S.mission.step<S.mission.steps.length){
+    const step=S.mission.steps[S.mission.step];
+    const sl=step.toLowerCase();
+    if(sl.includes("rest") && (S.stepsThisWake||0)>2){
+      S.mission.step++;
+      if(S.mission.step>=S.mission.steps.length){ S.mission=null; completeGoal("Mission complete"); return {thought:"Mission complete.", objective:"Rest", action:"rest", amount:0}; }
+    } else if(sl.includes("explore")||sl.includes("unvisited")){
+      if((S.stepsThisWake||0)>3){ S.mission.step++; }
+      return {thought:`Mission: ${step}`, objective:step, action:"explore", amount:0.5};
+    } else if(sl.includes("touch")||sl.includes("tactile")){
+      if(touch.contact){ S.mission.step++; return {thought:"Touched as required.", objective:step, action:"wait", amount:0.3}; }
+      return {thought:`Mission: ${step}`, objective:step, action:"touch", amount:1};
+    } else if(sl.includes("food")||sl.includes("eat")){
+      const f=nearestFood(pose);
+      if(f){ S.huntId=f.id; return steerPlan(pose,f.position[0],f.position[2],"nutrient"); }
+      return {thought:"Mission wants food but none seen.", objective:step, action:"explore", amount:0.5};
+    } else if(sl.includes("wavelength")||sl.includes("approach")||sl.includes("novel")){
+      return {thought:`Mission: ${step}`, objective:step, action:"investigate", amount:0.5, target:"novel wavelength"};
+    } else if(sl.includes("centre")||sl.includes("center")||sl.includes("return")){
+      return steerPlan(pose,0,0,"the centre");
+    }
+  }
+  if(S.operatorNote){
+    const note=S.operatorNote.toLowerCase();
+    const hid=pickHunt(note,pose);
+    if(hid){ S.huntId=hid; setGoal("hunt", note); }
+    if(note.includes("left")) return {thought:"Turning left as asked.", objective:"Follow note", action:"turn_left", amount:0.5};
+    if(note.includes("right")) return {thought:"Turning right as asked.", objective:"Follow note", action:"turn_right", amount:0.5};
+    if(note.includes("listen")||note.includes("sound")||note.includes("hear")) return {thought:"Listening.", objective:"Follow note", action:"listen", amount:0.6};
+    if(note.includes("wait")||note.includes("stop")||note.includes("rest")) return {thought:"Stopping as asked.", objective:"Rest", action:"rest", amount:0};
+    if(/\b(food|eat|nutrient|snack)\b/.test(note)){
+      setGoal("food","Find food (operator)");
+      const f=nearestFood(pose);
+      if(f){ S.huntId=f.id; return steerPlan(pose,f.position[0],f.position[2],"nutrient source"); }
+      return {thought:"Looking for food as asked.", objective:"Find food", action:"explore", amount:0.5};
+    }
+  }
+  if(S.huntId){
+    const o=S.objects.find(x=>x.id===S.huntId);
+    if(!o){ S.huntId=null; S.goalFailStreak=(S.goalFailStreak||0)+1; }
+    else {
+      const dist=Math.hypot(o.position[0]-pose.x,o.position[2]-pose.z);
+      if(o.material==="food" && dist<0.85){
+        return {thought:"At the nutrient. Picking up.", objective:"Pick up food", action:"pickup", amount:1};
+      }
+      if(dist<0.7 && !touch.contact) return {thought:"At target. Reaching out.", objective:"Touch target", action:"touch", amount:1};
+      if(dist<0.7 && touch.contact){
+        completeGoal("Reached and touched target.");
+        return {thought:"Contact made with target. Goal done.", objective:"Inspect", action:"wait", amount:0.4};
+      }
+      return steerPlan(pose,o.position[0],o.position[2], o.name||"target");
+    }
+  }
+  if(Math.abs(pose.x)>ROOM_HALF-0.6 || Math.abs(pose.z)>ROOM_HALF-0.6){
+    return steerPlan(pose,0,0,"the centre");
+  }
+  // shorter wake cycles so it actually rests
+  if((S.stepsThisWake||0)>=7 || S.action==="rest"){
+    pushMono("Survey segment done. Handing back to the operator.");
+    return {thought:"Survey pause. Resting so you can send a note.", objective:"Rest", action:"rest", amount:0};
+  }
+  const loud=hearing.filter(e=>e.amplitude>0.08 && e.ageMs<900);
+  if(loud.length){
+    const e=loud[0];
+    if(Math.abs(e.azimuthDeg)>18){
+      return {thought:`I heard ${e.frequencyHz} Hz from ${e.azimuthDeg<0?"the left":"the right"} at ${e.distanceM.toFixed(1)} m. Turning toward it.`,
+        objective:"Localise sound source", action:e.azimuthDeg<0?"turn_left":"turn_right", amount:Math.min(1.2,Math.abs(e.azimuthDeg)/50)};
+    }
+    if(e.distanceM>1.4){
+      return {thought:`The ${e.frequencyHz} Hz source is ahead, about ${e.distanceM.toFixed(1)} m. Closing the distance.`,
+        objective:"Approach sound", action:"forward", amount:0.7};
+    }
+  }
+  if(touch.contact && touch.objectId && !memory.some(m=>m.signature===`touch:${touch.objectId}`)){
+    // record once then move on — do not sit in wait forever
+    const band=bandForNm(vision.dominantWavelengthNm).band;
+    S.memory=pushCap(S.memory,{id:uid("mem"),t:Date.now(),kind:"touch",signature:`touch:${touch.objectId}`,
+      summary:`Contact: ${touch.materialFeel}, ${touch.temperatureC}°C, hardness ${touch.hardness}`},24);
+    pushMono(`New contact: ${touch.materialFeel}. Noted — continuing.`);
+    if(!S.heldId && (touch.approximateSize??9)<1.1 && (touch.hardness??1)<0.9){
+      return {thought:`Probe contact: ${touch.materialFeel}, hardness ${touch.hardness?.toFixed(2)}, ${touch.temperatureC}°C, ${touch.curvature}. Light enough — picking up to test mass.`,
+        objective:"Test mass", action:"pickup", amount:1};
+    }
+    return {thought:`Probe contact: ${touch.materialFeel}, hardness ${touch.hardness?.toFixed(2)}, ${touch.temperatureC}°C, ${touch.curvature}. Bound with nearby ${band} light. Moving on.`,
+      objective:"Record tactile discovery", action:"explore", amount:0.4};
+  }
+  if(S.heldId){
+    const heldObj=S.objects.find(x=>x.id===S.heldId);
+    if(heldObj && heldObj.material==="food"){
+      return {thought:"Still holding food — eating.", objective:"Eat food", action:"eat", amount:1};
+    }
+    // non-food held: put down and continue (don't spam)
+    if(S.action==="pickup" || S.action==="wait"){
+      return {thought:"Set the object down and continue surveying.", objective:"Continue survey", action:"drop", amount:1};
+    }
+  }
+  if((pose.pitch||0)>0.12){
+    return {thought:"Gaze is too high. Levelling the camera.", objective:"Level gaze", action:"look_down", amount:0.4};
+  }
+  const interest=vision.grid.map((cell,i)=>{
+    const gx=i%vision.gridSize, gy=Math.floor(i/vision.gridSize);
+    const ceilingPenalty=gy<=1?0.7:0;
+    const wallPenalty=(!cell.wavelengthNm && cell.edge<0.12)?0.8:0;
+    const farFlat=cell.depthM>2.4 && cell.edge<0.1?0.4:0;
+    const score=cell.brightness*0.35+cell.edge*1.6+(cell.wavelengthNm?0.8:0)+(cell.depthM<2.2?0.25:0)-ceilingPenalty-wallPenalty-farFlat;
+    return {cell,gx,gy,score};
+  }).filter(c=>c.score>0.12 && c.gy>0).sort((a,b)=>b.score-a.score);
+  const novel=interest.find(c=>!memory.some(m=>m.signature===`vis:${c.cell.wavelengthNm??"ach"}:${Math.round(c.cell.depthM)}`));
+  const target=novel??interest[0];
+  if(target){
+    const {gx,gy,cell}=target;
+    const yawErr=((gx+0.5)/vision.gridSize-0.5)*1.4;
+    const pitchErr=(0.5-(gy+0.5)/vision.gridSize)*0.8;
+    const label=cell.wavelengthNm?`${cell.wavelengthNm} nm`:"achromatic";
+    if(Math.abs(yawErr)>0.28 && S.action!=="turn_left" && S.action!=="turn_right" && S.action!=="scan"){
+      return {thought:`A ${label} patch at ${cell.depthM.toFixed(1)} m sits off-centre. Reorienting the camera.`,
+        objective:`Inspect ${label} region`, action:yawErr<0?"turn_left":"turn_right", amount:Math.min(0.55,Math.abs(yawErr))};
+    }
+    if(pitchErr<-0.28){
+      return {thought:`The ${label} signal is low in the field. Looking down.`,
+        objective:`Inspect ${label} region`, action:"look_down", amount:0.3};
+    }
+    if(pitchErr>0.32 && (pose.pitch||0)<0.08 && S.action!=="look_up"){
+      return {thought:`The ${label} signal is high in the field. A short look up.`,
+        objective:`Inspect ${label} region`, action:"look_up", amount:0.22};
+    }
+    if(cell.depthM>1.35){
+      return {thought:`${label} structure at ${cell.depthM.toFixed(1)} m. Moving closer to resolve edges.`,
+        objective:`Approach ${label} structure`, action:"forward", amount:Math.min(0.9,0.25+cell.depthM*0.12)};
+    }
+    if(!touch.contact){
+      return {thought:`${label} surface is within probe range. Reaching out.`, objective:"Tactile inspect", action:"touch", amount:1};
+    }
+  }
+  if(vision.minDepth<0.55 && S.nearestObstacleM<0.5) return {thought:"Near-field obstruction. Stepping back.", objective:"Clear space", action:"back", amount:0.55};
+  if(Math.abs(pose.x)>ROOM_HALF-0.35 || Math.abs(pose.z)>ROOM_HALF-0.35){
+    return {thought:"Right at the chamber boundary. Turning toward the centre.", objective:"Stay in chamber", action:pose.x>0?"turn_left":"turn_right", amount:0.45};
+  }
+  if(S.driveMode==="autostop" && S.stepsThisWake>=5){
+    return {thought:"Survey pass complete. Resting until woken or given a note.", objective:"Rest", action:"rest", amount:0};
+  }
+  // Only treat as dim if peak brightness is truly near black — never freeze the whole session
+  if((vision.peakBrightness??vision.meanBrightness)<0.04 && (S.dimWaits||0)<1){
+    S.dimWaits=(S.dimWaits||0)+1;
+    return {thought:"Field is very dark. One sample, then I will move toward brighter structure.", objective:"Find illumination", action:"scan", amount:0.5};
+  }
+  const touchedIds=memory.filter(m=>m.kind==="touch").map(m=>m.signature.replace("touch:",""));
+  if(touchedIds.length && Math.random()<0.12 && !S.huntId){
+    const revisitId=touchedIds[Math.floor(Math.random()*touchedIds.length)];
+    if(S.objects.some(o=>o.id===revisitId)){
+      S.huntId=revisitId;
+      return {thought:"Revisiting an earlier discovery.", objective:"Revisit discovery", action:"investigate", amount:0.4};
+    }
+  }
+  return {thought:"No strong new peaks. Exploring an unvisited part of the room.", objective:"Explore", action:"explore", amount:0.4};
+}
+function endpointFor(provider){
+  return provider==="groq"
+    ? "https://api.groq.com/openai/v1/chat/completions"
+    : "https://router.huggingface.co/v1/chat/completions";
+}
+function applyRateLimitBackoff(now){
+  S.rateLimitStrikes=Math.min(6,(S.rateLimitStrikes||0)+1);
+  // exponential: 20s, 40s, 80s, 160s… capped at 4 min
+  const waitMs=Math.min(240000, 20000 * Math.pow(2, S.rateLimitStrikes-1));
+  S.apiCooldownUntil=now+waitMs;
+  // slow the think loop so we don't thrash local + status
+  const base=S.baseThinkMs||7000;
+  S.thinkingIntervalMs=Math.min(20000, Math.max(base, 8000+S.rateLimitStrikes*1500));
+  scheduleThink();
+  const secs=Math.ceil(waitMs/1000);
+  setStatus("warn", `Rate limited · local for ${secs}s (strike ${S.rateLimitStrikes})`);
+  logSense("api",`Rate limited. Cooling down ${secs}s.`);
+  return waitMs;
+}
+function clearRateLimitSoft(){
+  if(S.rateLimitStrikes>0) S.rateLimitStrikes=Math.max(0,S.rateLimitStrikes-1);
+  if(S.rateLimitStrikes===0 && S.baseThinkMs){
+    S.thinkingIntervalMs=S.baseThinkMs;
+    scheduleThink();
+  }
+}
+async function queryRemote(user){
+  const model=S.customModel.trim()||S.model;
+  const sys=SYSTEM_PROMPT + neuroPromptModifier();
+  // Keep completions short on free tiers to stay under RPM/TPM
+  let maxTok=Math.min(S.maxTokens||96, 120);
+  if(S.complexMode){
+    if(S.neuro.cortisol>0.7||S.neuro.adrenaline>0.8) maxTok=Math.min(maxTok,48);
+    maxTok=Math.max(32, Math.round(maxTok * (S.circadian?.efficiency??1)));
+  }
+  let temp=S.temperature;
+  if(S.complexMode){
+    if(S.neuro.adrenaline>0.6) temp=Math.min(1.2, temp+0.15);
+    if(S.circadian.alertness<0.4) temp=Math.max(0.1, temp-0.1);
+  }
+  const res=await fetch(endpointFor(S.provider),{
+    method:"POST",
+    headers:{Authorization:`Bearer ${S.apiKey}`, "Content-Type":"application/json"},
+    body:JSON.stringify({
+      model, temperature:temp, max_tokens:maxTok,
+      messages:[{role:"system",content:sys},{role:"user",content:user}],
+    }),
+  });
+  if(!res.ok){
+    const t=await res.text().catch(()=> "");
+    // honour Retry-After if present
+    const ra=res.headers?.get?.("retry-after");
+    if(res.status===429 && ra){
+      const sec=Number(ra);
+      if(Number.isFinite(sec) && sec>0){
+        S.apiCooldownUntil=Date.now()+Math.min(240000, sec*1000);
+      }
+    }
+    throw new Error(parseApiError(res.status,t));
+  }
+  const json=await res.json();
+  return parseDecision(json.choices?.[0]?.message?.content??"");
+}
+function parseApiError(status,body){
+  if(status===401) return S.provider==="groq" ? "Groq rejected the key (401). Check it starts with gsk_." : "Hugging Face rejected the key (401).";
+  if(status===402) return S.provider==="groq" ? "Groq billing/limit response (402)." : "This model requires a Hugging Face plan or paid inference.";
+  if(status===404) return "Model not found. Check the model id for this provider.";
+  if(status===429) return "Rate limited (429). Local cortex will run until cooldown ends.";
+  try{
+    const j=JSON.parse(body);
+    const m=typeof j.error==="string"?j.error:(j.error?.message||j.message);
+    if(m) return m;
+  }catch{}
+  return `${S.provider==="groq"?"Groq":"Hugging Face"} error ${status}`;
+}
+async function testConnection(){
+  const model=S.customModel.trim()||S.model;
+  const res=await fetch(endpointFor(S.provider),{
+    method:"POST",
+    headers:{Authorization:`Bearer ${S.apiKey}`,"Content-Type":"application/json"},
+    body:JSON.stringify({model,max_tokens:8,messages:[{role:"user",content:"Reply with the single word: ok"}]}),
+  });
+  if(!res.ok){const t=await res.text().catch(()=> ""); throw new Error(parseApiError(res.status,t));}
+}
+
+let thinking=false;
+function pushChat(from,text){
+  if(!text) return;
+  const last=S.chat[S.chat.length-1];
+  if(last && last.from===from && last.text===text) return;
+  S.chat=pushCap(S.chat,{id:uid("msg"),from,text:String(text).slice(0,400),t:Date.now()},80);
+}
+function applyDecision(d){
+  S.action=d.action; S.amount=d.amount; S.actionT=0;
+  S.actionDur=Math.max(0.35,0.55/S.aiSpeed)*(d.action==="wait"?1.2:1);
+  S.thought=d.thought; S.objective=d.objective;
+  S.actionHistory=pushCap(S.actionHistory,d.action,10);
+  if(d.action!=="explore") { /* keep S.exploreTarget only while actively exploring */ }
+  else if(!S.exploreTarget){ /* stepAgent will pick one */ }
+  if(d.action==="investigate" && d.target){
+    const hid=pickHunt(d.target,S.agent);
+    if(hid) S.huntId=hid;
+  }
+  if(d.mission && d.mission.steps) S.mission=d.mission;
+  document.getElementById("hudAction").textContent=S.paused?"paused":d.action.replaceAll("_"," ");
+  renderRight();
+}
+function setAwake(on, reason){
+  S.awake=on;
+  if(on) S.stepsThisWake=0;
+  const el=document.getElementById("hudWake");
+  if(el) el.textContent=on?"exploring":"resting";
+  document.getElementById("hudAction").textContent=S.paused?"paused":(on?S.action.replaceAll("_"," "):"resting");
+  if(reason){
+    S.activity=pushCap(S.activity,{id:uid("act"),t:Date.now(),text:reason},40);
+  }
+}
+async function think(){
+  if(S.paused||thinking||!S.entered||!S.awake) return;
+  thinking=true;
+  try{
+    let decision;
+    const key=S.apiKey.trim();
+    const now=Date.now();
+    // Full AI when connected; local only on cooldown / no key / errors.
+    // Min 6s between remote calls to stay under free-tier RPM.
+    const minRemoteGap=6000;
+    const onCooldown=now<(S.apiCooldownUntil||0);
+    const tooSoon=(now-(S.lastRemoteAt||0))<minRemoteGap;
+    const canRemote=!S.useLocal && key && !onCooldown && !tooSoon;
+    if(canRemote){
+      try{
+        decision=await queryRemote(buildUserPayload());
+        S.wantRemote=false;
+        S.stepsSinceRemote=0;
+        S.lastRemoteAt=Date.now();
+        clearRateLimitSoft();
+        setStatus("online", (S.customModel.trim()||S.model)+" · full AI");
+        const heldFood=S.heldId && S.objects.find(o=>o.id===S.heldId&&o.material==="food");
+        if(heldFood && decision.action!=="eat" && decision.action!=="drop"){
+          decision={...decision, action:"eat", thought:(decision.thought||"")+" (grasping nutrient — eating)"};
+        }
+        if((decision.action==="investigate"||decision.action==="approach") && decision.target){
+          const hid=pickHunt(decision.target,S.agent);
+          if(hid) S.huntId=hid;
+        }
+        if(/food|nutrient|eat/i.test(decision.thought||decision.objective||decision.target||"")){
+          const f=nearestFood(S.agent);
+          if(f) S.huntId=f.id;
+        }
+      }catch(err){
+        const message=err instanceof Error?err.message:"Model request failed";
+        const rate=/429|rate limit|rate limited|too many|tokens per|tpm|rpm/i.test(message);
+        if(rate){
+          applyRateLimitBackoff(now);
+        } else {
+          setStatus("error", message);
+          // brief pause on other errors so we don't hammer a broken key
+          S.apiCooldownUntil=now+8000;
+        }
+        decision=localDecide();
+        decision={...decision, thought:`(local) ${decision.thought}`};
+      }
+    } else {
+      decision=localDecide();
+      if(!S.useLocal && key && onCooldown){
+        const left=Math.max(1, Math.ceil(((S.apiCooldownUntil||0)-now)/1000));
+        // update status at most occasionally — avoid flicker every tick
+        if(!S._lastCdMsg || now-S._lastCdMsg>4000){
+          setStatus("warn", `Cooldown ${left}s · local motor active`);
+          S._lastCdMsg=now;
+        }
+      }
+    }
+
+    if(S.touch.contact && S.touch.objectId){
+      const sig=`touch:${S.touch.objectId}`;
+      if(!S.memory.some(m=>m.signature===sig)){
+        S.memory=pushCap(S.memory,{id:uid("mem"),t:Date.now(),kind:"touch",signature:sig,
+          summary:`Contact: ${S.touch.materialFeel}, ${S.touch.temperatureC}°C, hardness ${S.touch.hardness}`},24);
+        logSense("touch",`New tactile discovery: ${S.touch.materialFeel}, ${S.touch.temperatureC}°C.`);
+      }
+    }
+    const visSig=`vis:${S.vision.dominantWavelengthNm??"ach"}:${Math.round(S.vision.minDepth)}`;
+    if(S.vision.meanBrightness>0.05 && !S.memory.some(m=>m.signature===visSig)){
+      S.memory=pushCap(S.memory,{id:uid("mem"),t:Date.now(),kind:"visual",signature:visSig,
+        summary:`Saw ${S.vision.dominantWavelengthNm?S.vision.dominantWavelengthNm+" nm":"broadband"} at ${S.vision.minDepth.toFixed(1)} m`},24);
+      logSense("vision",`New visual signature: ${S.vision.dominantWavelengthNm?S.vision.dominantWavelengthNm+" nm":"broadband"} at ${S.vision.minDepth.toFixed(1)} m.`);
+    }
+    S.activity=pushCap(S.activity,{id:uid("act"),t:Date.now(),text:decision.thought},40);
+    if(S.operatorNote) S.operatorNote="";
+    // confirmation bias: if decision target clashes with beliefs, resist
+    if(S.complexMode && decision.target && S.beliefs.length){
+      const clash=S.beliefs.find(b=>b.rejects && String(decision.target).toLowerCase().includes(b.rejects));
+      if(clash && Math.random()<0.55){
+        decision.thought=`That conflicts with what I already hold (${clash.text}). Not accepting it yet.`;
+        decision.action="wait";
+      }
+    }
+    decision=runInnerCritic(decision);
+    // tip-of-tongue / biased recall sometimes surfaces in thought
+    if(S.complexMode && Math.random()<0.15){
+      const rec=recallWithBias(decision.target||decision.objective||"");
+      if(rec && !rec.resolved && rec.clues) decision.thought+=( " · fragments: "+rec.clues.join(", "));
+      else if(rec && rec.answer) decision.thought+=(" · recalled: "+String(rec.answer).slice(0,60));
+    }
+    // store short-term memory of this thought
+    if(S.complexMode){
+      S.shortTermMem=pushCap(S.shortTermMem,{id:uid("stm"),t:Date.now(),kind:"thought",summary:decision.thought},24);
+      // form beliefs from repeated sensory summaries
+      if(S.memory.length>5 && S.beliefs.length<6 && Math.random()<0.08){
+        const m=S.memory[S.memory.length-1];
+        S.beliefs=pushCap(S.beliefs,{text:m.summary,rejects:null,t:Date.now()},8);
+      }
+    }
+    // if we just ate, force rest next
+    if(decision.action==="eat"){
+      decision={...decision, thought:(decision.thought||"")+" Goal complete — resting."};
+    }
+    applyDecision(decision);
+    pushChat("agent", decision.thought);
+    if(decision.thought) pushMono(decision.thought);
+    S.stepsThisWake=(S.stepsThisWake||0)+1;
+    if(decision.action==="eat"){
+      completeGoal("Food eaten.");
+      // schedule rest immediately on next tick
+      S.action="rest";
+      S.stepsThisWake=99;
+    }
+    const stepCap=S.useLocal?6:14;
+    if(S.driveMode==="autostop" && (S.stepsThisWake>=stepCap) && decision.action!=="rest"){
+      S.boredom=clamp((S.boredom||0)+0.25,0,1);
+    }
+    if(S.driveMode==="autostop" && (decision.action==="rest" || S.stepsThisWake>=stepCap)){
+      if(decision.action!=="rest"){
+        S.action="rest"; S.objective="Rest";
+        pushChat("agent", "Stopping here so you can reply.");
+      }
+      S.stepsThisWake=0;
+      setAwake(false, "Agent finished its current survey.");
+      pushChat("agent", "Goal finished. You can reply now.");
+      if(S.askPending){
+        pushChat("agent", S.askPending);
+        S.askPending=null;
+      }
+      renderRight();
+    }
+  } finally { thinking=false; }
+}
+
+/* ---------------- three.js world ---------------- */
+const canvas=document.getElementById("c");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0e1116);
+scene.fog=new THREE.Fog(0x12151b,14,30);
+const camera=new THREE.PerspectiveCamera(46,1,0.08,60);
+camera.position.set(6.2,4.4,7.1);
+const orbit=new OrbitControls(camera,renderer.domElement);
+orbit.target.set(0,0.9,0); orbit.enableDamping=true; orbit.dampingFactor=0.08;
+
+const amb=new THREE.AmbientLight(0xcdd6e0,S.lights.ambient);
+const hemi=new THREE.HemisphereLight(0xd7dde6,0x2a241c,0.35);
+const key=new THREE.DirectionalLight(S.lights.keyColor,S.lights.key);
+key.position.set(4.5,7,3.2); key.castShadow=true;
+key.shadow.mapSize.set(1024,1024);
+key.shadow.camera.near=0.5; key.shadow.camera.far=24;
+key.shadow.camera.left=key.shadow.camera.bottom=-8;
+key.shadow.camera.right=key.shadow.camera.top=8;
+const fill=new THREE.DirectionalLight(0x8fa6c2,S.lights.fill); fill.position.set(-5,3.5,-2);
+const ceil=new THREE.PointLight(0x6ec8c0,0.35,10); ceil.position.set(0,3.2,0);
+scene.add(amb,hemi,key,fill,ceil);
+
+const structure=new THREE.Group();
+structure.name="structure";
+scene.add(structure);
+function wall(x,y,z,w,h,d,c){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color:c,roughness:.9}));
+  m.position.set(x,y,z); m.receiveShadow=true; structure.add(m); return m;
+}
+const span=ROOM_HALF*2;
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(span,span), new THREE.MeshStandardMaterial({color:0x3a3f48,roughness:.92}));
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; structure.add(floor);
+const grid=new THREE.GridHelper(span,19,0x5ea8a2,0x4a5160);
+grid.position.y=0.012; structure.add(grid);
+wall(0,ROOM_HEIGHT/2,-(ROOM_HALF+WALL_T/2),span+WALL_T*2,ROOM_HEIGHT,WALL_T,0xcfc8ba);
+wall(0,ROOM_HEIGHT/2, (ROOM_HALF+WALL_T/2),span+WALL_T*2,ROOM_HEIGHT,WALL_T,0x8d877b);
+wall(-(ROOM_HALF+WALL_T/2),ROOM_HEIGHT/2,0,WALL_T,ROOM_HEIGHT,span+WALL_T*2,0xcfc8ba);
+wall( (ROOM_HALF+WALL_T/2),ROOM_HEIGHT/2,0,WALL_T,ROOM_HEIGHT,span+WALL_T*2,0xcfc8ba);
+const ceiling=new THREE.Mesh(new THREE.BoxGeometry(span+WALL_T*2,0.2,span+WALL_T*2), new THREE.MeshStandardMaterial({color:0x1b1f27,roughness:1}));
+ceiling.position.y=ROOM_HEIGHT+0.1; ceiling.receiveShadow=true; structure.add(ceiling);
+[-2.4,0,2.4].forEach(x=>{
+  const p=new THREE.Mesh(new THREE.PlaneGeometry(1.6,3.2), new THREE.MeshBasicMaterial({color:0xf3f1ea}));
+  p.rotation.x=Math.PI/2; p.position.set(x,ROOM_HEIGHT-0.04,0); structure.add(p);
+});
+
+const texCache={};
+function makeTexture(kind,color){
+  const key=kind+"_"+color;
+  if(texCache[key]) return texCache[key];
+  const c=document.createElement("canvas"); c.width=c.height=64;
+  const g=c.getContext("2d");
+  const [r,gv,b]=hexToRgb(color);
+  const rgb=`rgb(${Math.round(r*255)},${Math.round(gv*255)},${Math.round(b*255)})`;
+  g.fillStyle=rgb; g.fillRect(0,0,64,64);
+  g.fillStyle="rgba(0,0,0,.28)";
+  if(kind==="checker"){for(let y=0;y<8;y++)for(let x=0;x<8;x++) if((x+y)%2===0) g.fillRect(x*8,y*8,8,8)}
+  if(kind==="stripes"){for(let x=0;x<8;x++) if(x%2===0) g.fillRect(x*8,0,8,64)}
+  if(kind==="dots"){for(let y=0;y<8;y++)for(let x=0;x<8;x++){g.beginPath();g.arc(x*8+4,y*8+4,2,0,6.28);g.fill()}}
+  if(kind==="noise"){for(let i=0;i<400;i++){g.fillRect(Math.random()*64,Math.random()*64,2,2)}}
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2);
+  texCache[key]=t; return t;
+}
+function matFor(o){
+  const [r,g,b]=hexToRgb(o.color);
+  const m=new THREE.MeshStandardMaterial({color:new THREE.Color(r,g,b), roughness:.7, metalness:0});
+  if(o.material==="metal"){m.metalness=.95;m.roughness=.25}
+  if(o.material==="glossy"){m.roughness=.18;m.metalness=.15}
+  if(o.material==="glass"){m.transparent=true;m.opacity=.45;m.roughness=.05;m.metalness=.1}
+  if(o.material==="rubber"){m.roughness=.95;m.metalness=0}
+  if(o.material==="emissive"){m.emissive=new THREE.Color(r,g,b);m.emissiveIntensity=1.15;m.roughness=.3}
+  if(o.material==="food"){m.roughness=.85;m.metalness=0;m.emissive=new THREE.Color(r*0.15,g*0.1,b*0.05);m.emissiveIntensity=0.2}
+  if(o.texture && o.texture!=="none") m.map=makeTexture(o.texture,o.color);
+  return m;
+}
+function geoFor(shape){
+  if(shape==="sphere") return new THREE.SphereGeometry(.5,28,20);
+  if(shape==="cylinder") return new THREE.CylinderGeometry(.45,.45,1,24);
+  if(shape==="cone"||shape==="pyramid") return new THREE.ConeGeometry(.5,1, shape==="pyramid"?4:20);
+  if(shape==="torus") return new THREE.TorusGeometry(.38,.14,12,28);
+  if(shape==="capsule") return new THREE.CapsuleGeometry(.32,.55,6,12);
+  return new THREE.BoxGeometry(1,1,1);
+}
+
+const meshMap=new Map();
+const gltfLoader=new GLTFLoader();
+const objLoader=new OBJLoader();
+function fitImported(root){
+  const box=new THREE.Box3().setFromObject(root);
+  const size=box.getSize(new THREE.Vector3());
+  const max=Math.max(size.x,size.y,size.z,1e-4);
+  root.scale.multiplyScalar(1.35/max);
+  const box2=new THREE.Box3().setFromObject(root);
+  const c=box2.getCenter(new THREE.Vector3());
+  root.position.x-=c.x; root.position.z-=c.z;
+  root.position.y-=box2.min.y;
+}
+function tintImported(root,o){
+  const mat=matFor(o);
+  root.traverse(c=>{
+    if(!c.isMesh) return;
+    c.castShadow=true; c.receiveShadow=true;
+    if(o.wavelengthNm || (o.color && o.color!=="#c9d0d8")){
+      c.material=mat.clone();
+    }
+  });
+}
+function loadModelInto(group,o){
+  const url=o.modelUrl||"";
+  const isObj=/\.obj($|\?)/i.test(url) || o.modelKind==="obj";
+  const onOk=node=>{
+    while(group.children.length) group.remove(group.children[0]);
+    group.add(node);
+    fitImported(node);
+    tintImported(node,o);
+    group.userData.fitted=true;
+  };
+  if(isObj){
+    objLoader.load(url,onOk,undefined,()=>console.warn("OBJ load failed",url));
+  } else {
+    gltfLoader.load(url,gltf=>onOk(gltf.scene),undefined,()=>console.warn("GLTF load failed",url));
+  }
+}
+function syncMeshes(){
+  const ids=new Set(S.objects.map(o=>o.id));
+  for(const [id,mesh] of meshMap){
+    if(!ids.has(id)){scene.remove(mesh); mesh.traverse(c=>{if(c.geometry)c.geometry.dispose?.()}); meshMap.delete(id);}
+  }
+  for(const o of S.objects){
+    let mesh=meshMap.get(o.id);
+    if(!mesh){
+      if(o.shape==="model" && o.modelUrl){
+        mesh=new THREE.Group(); mesh.userData.id=o.id; mesh.userData.shape="model"; scene.add(mesh); meshMap.set(o.id,mesh);
+        loadModelInto(mesh,o);
+      } else {
+        mesh=new THREE.Mesh(geoFor(o.shape), matFor(o));
+        mesh.castShadow=true; mesh.receiveShadow=true; mesh.userData.id=o.id;
+        scene.add(mesh); meshMap.set(o.id,mesh);
+      }
+    } else if(mesh.isMesh){
+      const needGeo=mesh.userData.shape!==o.shape;
+      if(needGeo){mesh.geometry.dispose(); mesh.geometry=geoFor(o.shape); mesh.userData.shape=o.shape;}
+      const look=o.color+o.material+o.texture+(o.wavelengthNm||"")+(o.wavelengthNm2||"");
+      if(mesh.userData.look!==look){
+        mesh.material.dispose(); mesh.material=matFor(o); mesh.userData.look=look;
+      }
+    } else if(o.shape==="model"){
+      const look=o.color+o.material+o.texture+(o.wavelengthNm||"")+(o.wavelengthNm2||"");
+      if(mesh.userData.look!==look){ tintImported(mesh,o); mesh.userData.look=look; }
+    }
+    mesh.position.set(...o.position);
+    mesh.rotation.set(...o.rotation);
+    mesh.scale.set(...o.scale);
+    mesh.userData.shape=o.shape;
+  }
+}
+
+const agent=new THREE.Group();
+const body=new THREE.Mesh(new THREE.CapsuleGeometry(.18,.52,6,12), new THREE.MeshStandardMaterial({color:0xdfe4ea,roughness:.45}));
+body.position.y=.42; body.castShadow=true; agent.add(body);
+const visor=new THREE.Mesh(new THREE.BoxGeometry(.26,.1,.08), new THREE.MeshStandardMaterial({color:0x6ec8c0,emissive:0x6ec8c0,emissiveIntensity:.9}));
+visor.position.set(0,1.2,-.14); agent.add(visor);
+const handMesh=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8), new THREE.MeshStandardMaterial({color:0x6ec8c0,emissive:0x6ec8c0,emissiveIntensity:.4}));
+agent.add(handMesh);
+agent.position.set(0,0,2.6); scene.add(agent);
+
+const tcontrols=new TransformControls(camera,renderer.domElement);
+tcontrols.addEventListener("dragging-changed",e=>{orbit.enabled=!e.value});
+tcontrols.addEventListener("objectChange",()=>{
+  const id=S.selectedId; const mesh=id&&meshMap.get(id); const o=S.objects.find(x=>x.id===id);
+  if(!mesh||!o) return;
+  o.position=[mesh.position.x,mesh.position.y,mesh.position.z];
+  o.rotation=[mesh.rotation.x,mesh.rotation.y,mesh.rotation.z];
+  o.scale=[mesh.scale.x,mesh.scale.y,mesh.scale.z];
+  if(S.leftTab==="inspector") renderLeft();
+});
+scene.add(tcontrols.getHelper());
+
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+renderer.domElement.addEventListener("pointerdown",ev=>{
+  if(ev.button!==0) return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  pointer.x=((ev.clientX-rect.left)/rect.width)*2-1;
+  pointer.y=-((ev.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(pointer,camera);
+  const hits=raycaster.intersectObjects([...meshMap.values()],true);
+  if(hits.length){
+    let obj=hits[0].object;
+    while(obj && !obj.userData.id) obj=obj.parent;
+    if(obj?.userData.id){ S.selectedId=obj.userData.id; S.leftTab="inspector"; attachGizmo(); renderLeft(); }
+  } else if(!tcontrols.dragging){
+    S.selectedId=null; tcontrols.detach(); renderLeft();
+  }
+});
+function attachGizmo(){
+  const mesh=S.selectedId && meshMap.get(S.selectedId);
+  if(mesh){ tcontrols.attach(mesh); tcontrols.setMode(S.transformMode); }
+  else tcontrols.detach();
+}
+
+/* vision capture */
+let visRes=S.visionResolution;
+let colorRT=new THREE.WebGLRenderTarget(visRes,visRes,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter});
+const aiCam=new THREE.PerspectiveCamera(S.fov,1,0.12,16);
+let rgba=new Uint8Array(visRes*visRes*4);
+let prev=new Uint8Array(visRes*visRes*4);
+let depth=new Float32Array(visRes*visRes);
+const depthMat=new THREE.MeshDepthMaterial({depthPacking:THREE.BasicDepthPacking});
+function resizeVision(res){
+  visRes=res; S.visionResolution=res;
+  colorRT.dispose(); colorRT=new THREE.WebGLRenderTarget(res,res,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter});
+  rgba=new Uint8Array(res*res*4); prev=new Uint8Array(res*res*4); depth=new Float32Array(res*res);
+}
+function captureVision(){
+  const helper=tcontrols.getHelper?.()||tcontrols;
+  const helperWas=helper.visible!==false;
+  helper.visible=false;
+  tcontrols.visible=false;
+  prev.set(rgba);
+  const a=S.agent;
+  const lim=ROOM_HALF-0.55;
+  // human-like FOV; slightly wider when complex
+  aiCam.fov=Math.min(S.fov+(S.complexMode?8:0),72); aiCam.aspect=1; aiCam.near=0.12; aiCam.far=14; aiCam.updateProjectionMatrix();
+  // micro-tremor on camera
+  const mt=S.complexMode?S.gaze.microTremor:[0,0];
+  aiCam.position.set(clamp(a.x,-lim,lim)+mt[0]*0.01, AGENT_EYE+mt[1]*0.008, clamp(a.z,-lim,lim));
+  // keep walls/floor visible so the agent sees the chamber; hide only the helper grid overlay
+  if(grid) grid.visible=false;
+  structure.visible=true;
+  agent.visible=false; // don't see own body
+  const lx=a.x-Math.sin(a.yaw)*Math.cos(a.pitch)*2;
+  const ly=AGENT_EYE+Math.sin(a.pitch)*2;
+  const lz=a.z-Math.cos(a.yaw)*Math.cos(a.pitch)*2;
+  aiCam.lookAt(lx,ly,lz);
+  const prevBg=scene.background;
+  renderer.setRenderTarget(colorRT);
+  renderer.render(scene,aiCam);
+  renderer.readRenderTargetPixels(colorRT,0,0,visRes,visRes,rgba);
+  const n=visRes*visRes;
+  for(let i=0;i<n;i++) depth[i]=8;
+  const step=Math.max(1,Math.floor(visRes/16));
+  const ray=new THREE.Raycaster();
+  const ndc=new THREE.Vector3();
+  const depthTargets=[...meshMap.values(), ...structure.children];
+  for(let y=0;y<visRes;y+=step){
+    for(let x=0;x<visRes;x+=step){
+      ndc.set((x/visRes)*2-1, (y/visRes)*2-1, 0.5);
+      ray.setFromCamera(ndc, aiCam);
+      const hits=ray.intersectObjects(depthTargets, true);
+      const d=hits[0]?hits[0].distance:12;
+      for(let yy=y;yy<Math.min(visRes,y+step);yy++)
+        for(let xx=x;xx<Math.min(visRes,x+step);xx++)
+          depth[yy*visRes+xx]=d;
+    }
+  }
+  renderer.setRenderTarget(null);
+  scene.background=prevBg;
+  helper.visible=helperWas;
+  tcontrols.visible=true;
+  if(grid) grid.visible=true;
+  structure.visible=true;
+  agent.visible=true;
+  // WebGL read is origin bottom-left; flip into a top-left buffer for processing
+  const flipped=new Uint8Array(rgba.length);
+  const flippedD=new Float32Array(depth.length);
+  for(let y=0;y<visRes;y++){
+    const src=y*visRes*4, dst=(visRes-1-y)*visRes*4;
+    flipped.set(rgba.subarray(src,src+visRes*4), dst);
+    flippedD.set(depth.subarray(y*visRes,(y+1)*visRes), (visRes-1-y)*visRes);
+  }
+  rgba.set(flipped); depth.set(flippedD);
+  S.vision=processVision(rgba,depth,prev,visRes,S.fov);
+  S.frameId=(S.frameId||0)+1;
+  S.frameTimeS=performance.now()/1000;
+  drawVision();
+}
+
+const visCanvas=document.createElement("canvas");
+visCanvas.className="vis";
+function drawVision(){
+  const mode=S.visionMode, res=visRes;
+  visCanvas.width=res; visCanvas.height=res;
+  const ctx=visCanvas.getContext("2d");
+  const img=ctx.createImageData(res,res);
+  const gridSize=S.vision.gridSize||GRID;
+  const fGx=(S.gaze?.foveaGx??gridSize/2), fGy=(S.gaze?.foveaGy??gridSize/2);
+  const cell=res/gridSize;
+  for(let i=0;i<res*res;i++){
+    const o=i*4; let r=rgba[o]/255,g=rgba[o+1]/255,b=rgba[o+2]/255;
+    const lum=luminance(r,g,b);
+    const d=depth[i]/12;
+    const x=i%res, y=Math.floor(i/res);
+    // simulate foveated degradation in the preview when complex
+    if(S.complexMode){
+      const gx=x/cell, gy=y/cell;
+      const distF=Math.hypot(gx-fGx, gy-fGy);
+      let acuity=1;
+      if(distF>1.2) acuity=distF>4?0.15:distF>2.5?0.35:0.6;
+      if(acuity<0.9){
+        // blur-ish by reducing contrast / quantizing
+        r=lum+(r-lum)*acuity; g=lum+(g-lum)*acuity; b=lum+(b-lum)*acuity;
+        if(acuity<0.3){ r=g=b=Math.round(lum*6)/6; }
+      }
+    }
+    if(mode==="red"){g=0;b=0}
+    else if(mode==="blue"){r=0;g=0}
+    else if(mode==="yellow"){b=0; g=Math.max(g,r*0.7)}
+    else if(mode==="bw"){r=g=b=lum}
+    else if(mode==="edges"){
+      let mag=0;
+      if(x+1<res){const j=(y*res+x+1)*4; mag+=Math.abs(lum-luminance(rgba[j]/255,rgba[j+1]/255,rgba[j+2]/255))}
+      r=g=b=Math.min(1,mag*6);
+    }
+    else if(mode==="depth"){r=g=b=clamp(1-d,0,1)}
+    else if(mode==="wavelength"){
+      const nm=rgbToWavelengthNm(r,g,b);
+      if(nm==null){r=g=b=lum*0.35}
+      else {const c=wavelengthToRgb(nm); r=c[0]; g=c[1]; b=c[2]}
+    }
+    else if(mode==="inferred"){
+      r=clamp((r-0.5)*1.25+0.5,0,1); g=clamp((g-0.5)*1.25+0.5,0,1); b=clamp((b-0.5)*1.25+0.5,0,1);
+    }
+    img.data[o]=r*255; img.data[o+1]=g*255; img.data[o+2]=b*255; img.data[o+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  // fovea crosshair
+  if(S.complexMode){
+    const cx=(fGx+0.5)*cell, cy=(fGy+0.5)*cell;
+    ctx.strokeStyle="rgba(110,200,192,0.85)"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx-4,cy); ctx.lineTo(cx+4,cy); ctx.moveTo(cx,cy-4); ctx.lineTo(cx,cy+4); ctx.stroke();
+    ctx.strokeStyle="rgba(110,200,192,0.35)";
+    ctx.beginPath(); ctx.arc(cx,cy,cell*1.2,0,Math.PI*2); ctx.stroke();
+  }
+  const host=document.getElementById("visHost");
+  if(host && visCanvas.parentNode!==host){ host.innerHTML=""; host.appendChild(visCanvas); }
+}
+
+/* agent step */
+const keys=new Set();
+window.addEventListener("keydown",e=>{
+  keys.add(e.code);
+  if(["KeyW","KeyA","KeyS","KeyD","Space"].includes(e.code) && S.cameraMode==="walk") e.preventDefault();
+});
+window.addEventListener("keyup",e=>keys.delete(e.code));
+
+function handWorld(){
+  const a=S.agent;
+  const reach=0.55 + (S.action==="touch"?0.35:0);
+  return [
+    a.x - Math.sin(a.yaw)*reach + a.hand[0]*0.15,
+    AGENT_EYE + a.hand[1] - 0.35,
+    a.z - Math.cos(a.yaw)*reach,
+  ];
+}
+
+/* ---------------- navigation controller ----------------
+   This is the local layer between AI decisions and the physics engine.
+   The AI only ever says "go toward X" / "explore" / "forward one step" —
+   this function handles turning, obstacle avoidance, slowing near walls,
+   and never freezes indefinitely into a surface. */
+function frontClearance(x,z,yaw){
+  // sample a small fan of rays in front of the agent, return {best angle offset, min dist ahead}
+  const offsets=[-0.9,-0.5,-0.22,0,0.22,0.5,0.9];
+  let bestOff=0, bestDist=-1, straightAhead=6;
+  for(const off of offsets){
+    const d=rayDistance(x,z,yaw+off,3.2);
+    if(off===0) straightAhead=d;
+    if(d>bestDist){bestDist=d; bestOff=off;}
+  }
+  return {bestOff,bestDist,straightAhead};
+}
+function seekTowards(dt,tx,tz,spd){
+  const a=S.agent;
+  const vx=tx-a.x, vz=tz-a.z, dist=Math.hypot(vx,vz);
+  if(dist<0.6) return {dx:0,dz:0,reached:true,dist};
+  const wantYaw=Math.atan2(-vx,-vz);
+  const {bestOff,straightAhead}=frontClearance(a.x,a.z,a.yaw);
+  // blend: mostly aim at the goal, but bend around obstacles using the clearest nearby ray
+  const avoidWeight=straightAhead<1.6?clamp(1-(straightAhead-0.35)/1.25,0,1):0;
+  const blendedYaw=wrapAngle(wantYaw+avoidWeight*bestOff*1.1);
+  const err=wrapAngle(blendedYaw-a.yaw);
+  a.yaw+=clamp(err,-2.6*dt,2.6*dt);
+  // slow down (not stop) as we approach an obstacle directly ahead, rather than freezing
+  const slow=clamp((straightAhead-0.45)/1.4,0.12,1);
+  let dx=0,dz=0;
+  if(Math.abs(err)<1.05){
+    dx=-Math.sin(a.yaw)*spd*dt*slow; dz=-Math.cos(a.yaw)*spd*dt*slow;
+  }
+  return {dx,dz,reached:false,dist};
+}
+
+/* ---------------- physiology & complex-mode tick ---------------- */
+function tickCircadian(dt){
+  // phase advances with real time scaled; light level from vision mean brightness biases toward day
+  const daySec=120; // 2 min sim = 1 day for demo feel
+  S.circadian.phase=(S.circadian.phase + dt/daySec)%1;
+  const light=S.vision?.meanBrightness??0.3;
+  // light pulls phase toward noon when bright
+  if(light>0.4) S.circadian.phase += (0.5-S.circadian.phase)*0.002*dt;
+  // alertness: high near phase 0.35–0.7 (day), low at night
+  const dayness=Math.sin(S.circadian.phase*Math.PI*2 - Math.PI/2)*0.5+0.5; // 0 night 1 day
+  S.circadian.alertness=clamp(0.35+dayness*0.55 - S.sleepDebt*0.3 - (1-S.energy)*0.15, 0.15, 1);
+  S.circadian.efficiency=clamp(0.4+S.circadian.alertness*0.6, 0.25, 1);
+  if(S.circadian.phase<0.2||S.circadian.phase>0.85) S.sleepDebt=clamp(S.sleepDebt+0.001*dt,0,1);
+  else S.sleepDebt=clamp(S.sleepDebt-0.002*dt,0,1);
+}
+function consolidateMemory(){
+  // move aged short-term entries into compressed long-term summaries
+  const now=Date.now();
+  const keep=[], aged=[];
+  for(const m of S.shortTermMem){
+    if(now-m.t > 45000) aged.push(m); else keep.push(m);
+  }
+  S.shortTermMem=keep.slice(-24);
+  if(aged.length>=3){
+    const kinds={};
+    aged.forEach(m=>{ kinds[m.kind]=(kinds[m.kind]||0)+1; });
+    const summary=Object.entries(kinds).map(([k,n])=>`${n}× ${k}`).join(", ");
+    const emotion=S.neuro.cortisol>0.5?"anxious":S.neuro.dopamine>0.6?"pleasant":"neutral";
+    S.longTermMem=pushCap(S.longTermMem,{
+      id:uid("ltm"), t:now, emotion, summary:`Consolidated: ${summary}. Felt ${emotion}.`,
+      tags:Object.keys(kinds),
+    },40);
+    logSense("memory",`Consolidated ${aged.length} short-term traces → long-term (${emotion}).`);
+  }
+  // decay very old long-term slightly by dropping oldest when over cap (already capped)
+}
+function recallWithBias(query){
+  // emotional recollection bias + tip-of-the-tongue
+  if(S.tipOfTongue && S.tipOfTongue.cyclesLeft>0){
+    S.tipOfTongue.cyclesLeft--;
+    return {clues:S.tipOfTongue.clues, resolved:false, note:"tip-of-the-tongue: related fragments only"};
+  }
+  const mood=S.neuro.cortisol>0.55?"anxious":S.neuro.dopamine>0.6?"pleasant":"neutral";
+  const pool=[...S.longTermMem, ...S.memory.slice(-12)];
+  const scored=pool.map(m=>{
+    let s=0;
+    const text=(m.summary||m.note||"").toLowerCase();
+    if(query && text.includes(query.toLowerCase())) s+=2;
+    if(m.emotion===mood) s+=1.2; // bias toward mood-congruent memories
+    if(m.emotion && m.emotion!==mood) s-=0.4;
+    return {m,s};
+  }).sort((a,b)=>b.s-a.s);
+  if(scored.length && Math.random()<0.25 && !S.tipOfTongue){
+    // tip-of-the-tongue: delay full recall
+    const top=scored[0].m;
+    const words=(top.summary||top.note||"").split(/\s+/).filter(Boolean);
+    S.tipOfTongue={
+      clues:words.slice(0,3).concat(["…something about a surface / signal"]),
+      answer:top.summary||top.note,
+      cyclesLeft:2,
+    };
+    return {clues:S.tipOfTongue.clues, resolved:false, note:"struggling to recall exact detail"};
+  }
+  if(S.tipOfTongue && S.tipOfTongue.cyclesLeft<=0){
+    const ans=S.tipOfTongue.answer; S.tipOfTongue=null;
+    return {clues:[], resolved:true, answer:ans, note:"recalled after delay"};
+  }
+  return {memories:scored.slice(0,4).map(x=>x.m), resolved:true};
+}
+function runInnerCritic(decision){
+  if(!S.complexMode) return decision;
+  const act=decision.action||"";
+  let note="";
+  if(S.neuro.cortisol>0.6 && ["explore","investigate","forward"].includes(act)){
+    note="Inner critic: risky to push forward while stressed — reconsider.";
+    if(Math.random()<0.4){ decision.action="wait"; decision.thought=(decision.thought||"")+" (self-doubt: holding still)"; }
+  } else if(S.neuro.dopamine>0.7 && act==="rest"){
+    note="Inner critic: resting now wastes a good mood — keep exploring.";
+    if(Math.random()<0.35){ decision.action="explore"; decision.thought=(decision.thought||"")+" (pride/curiosity overrides rest)"; }
+  } else if(S.beliefs.length && decision.target){
+    const clash=S.beliefs.find(b=>decision.target && b.rejects && decision.target.toLowerCase().includes(b.rejects));
+    if(clash){
+      note=`Inner critic: that contradicts belief "${clash.text}" — resisting.`;
+      decision.thought=(decision.thought||"")+" (dissonance: reluctant to accept)";
+    }
+  } else if(Math.random()<0.12){
+    note=S.neuro.serotonin>0.5?"Inner critic: action feels aligned.":"Inner critic: second-guessing this choice.";
+  }
+  S.innerCriticNote=note;
+  if(note) logSense("critic", note);
+  return decision;
+}
+function tickSubconscious(){
+  if(!S.complexMode || S.awake) return; // only when resting / idle
+  if(S.subconsciousQueue.length){
+    const item=S.subconsciousQueue.shift();
+    S.shortTermMem=pushCap(S.shortTermMem,{id:uid("stm"),t:Date.now(),kind:"insight",summary:item},24);
+    logSense("subconscious", item);
+    pushChat("agent", "(quiet insight) "+item);
+  } else if(S.longTermMem.length && Math.random()<0.3){
+    const m=S.longTermMem[Math.floor(Math.random()*S.longTermMem.length)];
+    S.subconsciousQueue.push(`Background: earlier ${m.summary} may relate to current objective.`);
+  }
+}
+function tickPhysiology(dt){
+  if(!S.complexMode) return;
+  const t=dt*S.simSpeed;
+  tickCircadian(t);
+  // endocrine drift
+  S.neuro.dopamine=clamp(S.neuro.dopamine+(0.4-S.neuro.dopamine)*0.02*t,0,1);
+  S.neuro.cortisol=clamp(S.neuro.cortisol+(0.12-S.neuro.cortisol)*0.03*t,0,1);
+  S.neuro.adrenaline=clamp(S.neuro.adrenaline+(0.08-S.neuro.adrenaline)*0.05*t,0,1);
+  S.neuro.oxytocin=clamp(S.neuro.oxytocin+(0.3-S.neuro.oxytocin)*0.015*t,0,1);
+  S.neuro.serotonin=clamp(S.neuro.serotonin+(0.5-S.neuro.serotonin)*0.02*t + (S.circadian.alertness-0.5)*0.01*t,0,1);
+  S.nociception.mechanical=clamp(S.nociception.mechanical-0.08*t,0,1);
+  S.nociception.thermal=clamp(S.nociception.thermal-0.06*t,0,1);
+  S.nociception.chemical=clamp(S.nociception.chemical-0.05*t,0,1);
+  S.nociception.active=S.nociception.mechanical>0.3||S.nociception.thermal>0.3||S.nociception.chemical>0.3;
+  // homeostatic drives
+  S.hunger=clamp(S.hunger+0.004*t,0,1);
+  S.energy=clamp(S.energy-0.002*t-(S.hunger>0.7?0.003*t:0)-(1-S.circadian.alertness)*0.001*t,0.05,1.2);
+  S.hydration=clamp(S.hydration-0.0015*t,0.2,1);
+  S.metabolic.battery=clamp(S.energy*0.7+S.metabolic.battery*0.3 - 0.0008*t, 0.05, 1);
+  S.metabolic.computeLoad=clamp(0.15+(S.awake?0.25:0.05)+S.neuro.adrenaline*0.2,0,1);
+  S.metabolic.memoryPressure=clamp(S.shortTermMem.length/24,0,1);
+  S.metabolic.wear=clamp(S.metabolic.wear+0.00005*t,0,1);
+  // mortality / lifespan
+  const ageH=(Date.now()-S.birthTime)/3600000;
+  S.lifespanHours=clamp(72-ageH-S.metabolic.wear*20, 0.1, 72);
+  // interoception
+  S.intero.gluco=clamp(0.9-S.hunger*0.7+S.energy*0.2,0.1,1);
+  S.intero.osmo=clamp(S.hydration,0.1,1);
+  S.intero.chemoO2=clamp(0.98-S.neuro.adrenaline*0.15,0.7,1);
+  S.intero.chemoCO2=clamp(0.15+S.neuro.adrenaline*0.2+(S.action==="forward"?0.05:0),0.1,0.5);
+  S.intero.baro=clamp(0.45+S.neuro.adrenaline*0.35,0.2,1);
+  S.intero.pulmonary=clamp(0.35+S.neuro.adrenaline*0.3,0.2,1);
+  // digestion
+  if(S.stomach.digesting){
+    S.stomach.progress+=0.08*t;
+    if(S.stomach.progress>=1){
+      S.energy=clamp(S.energy+0.35,0,1.2);
+      S.hunger=clamp(S.hunger-0.4,0,1);
+      S.neuro.dopamine=clamp(S.neuro.dopamine+0.25,0,1);
+      S.neuro.oxytocin=clamp(S.neuro.oxytocin+0.1,0,1);
+      logSense("digest",`Finished digesting ${S.stomach.digesting}. Energy restored.`);
+      S.stomach.digesting=null; S.stomach.progress=0;
+      if(S.stomach.contents.length) S.stomach.digesting=S.stomach.contents.shift();
+    }
+  } else if(S.stomach.contents.length){
+    S.stomach.digesting=S.stomach.contents.shift();
+    S.stomach.progress=0;
+  }
+  const vx=S.vAgentX||0, vz=S.vAgentZ||0;
+  S.proprio.accel=[round(vx*0.3),0,round(vz*0.3)];
+  // proprioceptive drift when tired / high cortisol
+  const drift=(1-S.metabolic.battery)*0.08 + S.neuro.cortisol*0.05;
+  S.proprio.balanceTilt=round(Math.sin(performance.now()/900)*0.02 + (Math.abs(vx)+Math.abs(vz))*0.04 + (Math.random()-0.5)*drift);
+  S.proprio.jointAngles.head=round(S.agent.pitch);
+  if(S.vision.motion>0.18 && S.vision.minDepth<1.4){
+    S.neuro.cortisol=clamp(S.neuro.cortisol+0.35,0,1);
+    S.neuro.adrenaline=clamp(S.neuro.adrenaline+0.45,0,1);
+    logSense("threat","Fast approaching motion detected — cortisol/adrenaline spike.");
+  }
+  if(S.nociception.active) S.neuro.cortisol=clamp(S.neuro.cortisol+0.15*t,0,1);
+  // periodic memory consolidation
+  if(Math.random()<0.02*t) consolidateMemory();
+  if(!S.awake) tickSubconscious();
+}
+function tryEatHeld(){
+  // allow eat even outside complex mode so food goals always work
+  if(!S.heldId) return false;
+  const o=S.objects.find(x=>x.id===S.heldId);
+  if(!o || o.material!=="food") return false;
+  if(S.complexMode && S.stomach.contents.length+ (S.stomach.digesting?1:0) >= S.stomach.capacity){
+    logSense("stomach","Stomach full — cannot eat more.");
+    return false;
+  }
+  if(S.complexMode){
+    S.stomach.contents.push(o.name||"food item");
+    S.neuro.dopamine=clamp(S.neuro.dopamine+0.15,0,1);
+    S.hunger=clamp(S.hunger-0.35,0,1);
+    S.energy=clamp(S.energy+0.2,0,1.2);
+  }
+  S.objects=S.objects.filter(x=>x.id!==S.heldId);
+  S.heldId=null;
+  completeGoal("Nutrient acquired and eaten.");
+  pushMono("That was food. Goal complete — I can rest now.");
+  logSense("eat",`Ate ${o.name||"item"}.`);
+  return true;
+}
+function stepAgent(dt){
+  if(S.paused || S.simSpeed<=0) return;
+  tickPhysiology(dt);
+  const spd=1.05*S.aiSpeed*S.simSpeed;
+  const turn=1.05*S.aiSpeed*S.simSpeed;
+  S.actionT+=dt;
+  const a=S.agent;
+  let dx=0,dz=0;
+  const act=S.action;
+  const turnBudget=act==="scan"?0.5:1.2;
+  S.nearestObstacleM=round(rayDistance(a.x,a.z,a.yaw,6));
+
+  if(S.recovering){
+    S.recoverT+=dt;
+    if(S.recoverPhase==="reverse" || S.recoverT<0.55){
+      // back away from obstacle
+      dx+=Math.sin(a.yaw)*spd*dt*0.9; dz+=Math.cos(a.yaw)*spd*dt*0.9;
+      if(S.recoverT>=0.55) S.recoverPhase="turn";
+    } else if(S.recoverPhase==="turn" || S.recoverT<1.35){
+      a.yaw+=S.recoverYaw*2.2*dt;
+      if(S.recoverT>=1.35) S.recoverPhase="go";
+    } else {
+      dx-=Math.sin(a.yaw)*spd*dt*0.8; dz-=Math.cos(a.yaw)*spd*dt*0.8;
+      if(S.recoverT>2.0){ S.recovering=false; S.posHistory=[]; S.stuckLevel=0; }
+    }
+  } else if(S.huntId){
+    const o=S.objects.find(x=>x.id===S.huntId);
+    if(!o){ S.huntId=null; S.navLabel=null; }
+    else {
+      const dist=Math.hypot(o.position[0]-a.x,o.position[2]-a.z);
+      // when close to food, stop seeking and let action (pickup) take over
+      if(o.material==="food" && dist<0.75){
+        /* hold position; think() will issue pickup */
+      } else {
+        const r=seekTowards(dt,o.position[0],o.position[2],spd);
+        dx=r.dx; dz=r.dz;
+        if(r.reached && o.material!=="food"){ S.huntId=null; S.navLabel=null; }
+      }
+    }
+  } else if(act==="explore"){
+    if(!S.exploreTarget || Math.hypot(S.exploreTarget.x-a.x,S.exploreTarget.z-a.z)<0.6){
+      const c=pickFrontierCell(a);
+      if(c){ S.exploreTarget=c; S.exploreLabel=`an unvisited part of the room (${c.gx>0?"east":c.gx<0?"west":"centre"}${c.gz!==0?(c.gz>0?"-south":"-north"):""})`; logSense("explore",`Choosing to explore ${S.exploreLabel}.`); }
+    }
+    if(S.exploreTarget){
+      const r=seekTowards(dt,S.exploreTarget.x,S.exploreTarget.z,spd);
+      dx=r.dx; dz=r.dz;
+      if(r.reached){ S.exploreTarget=null; S.exploreLabel=null; }
+    }
+  } else if(act==="investigate" && S.seekX!=null && S.seekZ!=null){
+    const r=seekTowards(dt,S.seekX,S.seekZ,spd);
+    dx=r.dx; dz=r.dz;
+    if(r.reached){ S.seekX=S.seekZ=null; S.navLabel=null; }
+  } else if(S.seekX!=null && S.seekZ!=null){
+    const r=seekTowards(dt,S.seekX,S.seekZ,spd);
+    dx=r.dx; dz=r.dz;
+    if(r.reached){ S.seekX=S.seekZ=null; S.navLabel=null; }
+  } else {
+    if(act==="forward"){
+      const {bestOff,straightAhead}=frontClearance(a.x,a.z,a.yaw);
+      if(straightAhead<0.9){
+        // steer around rather than freezing against the surface
+        a.yaw+=clamp(bestOff,-2.4*dt*4,2.4*dt*4)*dt*3;
+      }
+      const slow=clamp((straightAhead-0.4)/1.2,0.15,1);
+      dx-=Math.sin(a.yaw)*spd*dt*slow; dz-=Math.cos(a.yaw)*spd*dt*slow;
+    }
+    if(act==="back"||act==="flee"){dx+=Math.sin(a.yaw)*spd*dt*(act==="flee"?1.6:1); dz+=Math.cos(a.yaw)*spd*dt*(act==="flee"?1.6:1); if(act==="flee") a.yaw+= (Math.random()-0.5)*0.8*dt;}
+    if(act==="strafe_left"){dx-=Math.cos(a.yaw)*spd*dt; dz+=Math.sin(a.yaw)*spd*dt}
+    if(act==="strafe_right"){dx+=Math.cos(a.yaw)*spd*dt; dz-=Math.sin(a.yaw)*spd*dt}
+    if((act==="turn_left"||act==="scan"||act==="circle") && S.actionT<turnBudget*(act==="circle"?2:1)) a.yaw+=turn*dt*(act==="scan"?0.55:act==="circle"?0.9:1);
+    if(act==="turn_right" && S.actionT<turnBudget) a.yaw-=turn*dt;
+    if(act==="approach"||act==="inspect_close"){
+      const {bestOff,straightAhead}=frontClearance(a.x,a.z,a.yaw);
+      if(straightAhead>0.7){ dx-=Math.sin(a.yaw)*spd*dt*0.7; dz-=Math.cos(a.yaw)*spd*dt*0.7; }
+      else if(act==="inspect_close") { /* stay and touch */ }
+    }
+    if(act==="map_area"||act==="seek_light"||act==="seek_sound"){
+      // treat like explore with a mild bias
+      if(!S.exploreTarget){ const c=pickFrontierCell(a); if(c) S.exploreTarget=c; }
+      if(S.exploreTarget){ const r=seekTowards(dt,S.exploreTarget.x,S.exploreTarget.z,spd*0.85); dx=r.dx; dz=r.dz; if(r.reached) S.exploreTarget=null; }
+    }
+  }
+  if(act==="look_up") a.pitch=clamp(a.pitch+0.45*dt,-0.55,0.35);
+  if(act==="look_down") a.pitch=clamp(a.pitch-0.55*dt,-0.55,0.35);
+  if(act!=="look_up" && act!=="look_down") a.pitch=a.pitch+(-0.06-a.pitch)*Math.min(1,dt*1.6);
+  if(act==="eat" && S.actionT<0.15) tryEatHeld();
+  if(act==="calm" && S.complexMode){ S.neuro.cortisol=clamp(S.neuro.cortisol-0.08*dt,0,1); S.neuro.adrenaline=clamp(S.neuro.adrenaline-0.1*dt,0,1); }
+  if(act==="alert" && S.complexMode){ S.neuro.adrenaline=clamp(S.neuro.adrenaline+0.05*dt,0,1); }
+  if(S.cameraMode==="walk"){
+    const w=keys.has("KeyW"), s=keys.has("KeyS"), l=keys.has("KeyA"), r=keys.has("KeyD");
+    if(w){dx-=Math.sin(a.yaw)*spd*dt*1.2; dz-=Math.cos(a.yaw)*spd*dt*1.2}
+    if(s){dx+=Math.sin(a.yaw)*spd*dt*1.2; dz+=Math.cos(a.yaw)*spd*dt*1.2}
+    if(l){dx-=Math.cos(a.yaw)*spd*dt*1.2; dz+=Math.sin(a.yaw)*spd*dt*1.2}
+    if(r){dx+=Math.cos(a.yaw)*spd*dt*1.2; dz-=Math.sin(a.yaw)*spd*dt*1.2}
+  }
+  // proprioceptive drift / clumsiness when tired or high cortisol
+  if(S.complexMode){
+    const noise=((1-S.metabolic.battery)*0.15 + S.neuro.cortisol*0.1 + (1-S.circadian.alertness)*0.08);
+    if(noise>0.05 && (Math.abs(dx)+Math.abs(dz))>0.001){
+      dx+=(Math.random()-0.5)*noise*dt*1.2;
+      dz+=(Math.random()-0.5)*noise*dt*1.2;
+      // occasional drop if holding and very depleted
+      if(S.heldId && S.metabolic.battery<0.25 && Math.random()<0.002){
+        S.heldId=null; logSense("clumsy","Dropped held object — motor noise high.");
+      }
+    }
+  }
+  const p=collideAgent(a.x+dx,a.z+dz);
+  const moved=Math.hypot(p.x-a.x,p.z-a.z);
+  S.vAgentX=dt>0?(p.x-a.x)/dt:0; S.vAgentZ=dt>0?(p.z-a.z)/dt:0;
+  const intendedMove=(act==="forward"||act==="explore"||act==="investigate"||act==="back")||Boolean(S.huntId)||Boolean(S.exploreTarget)||(S.seekX!=null);
+  if(!S.recovering && trackStuck(dt,intendedMove && Math.hypot(dx,dz)>0.001)){
+    beginRecovery();
+  }
+  a.x=p.x; a.z=p.z;
+  const hw=handWorld();
+  if(act==="touch"||act==="pickup") S.touch=sampleTouch(hw);
+  else S.touch=sampleTouch(hw);
+  if(act==="pickup" && S.touch.contact && !S.heldId){
+    const tgt=S.objects.find(x=>x.id===S.touch.objectId);
+    const small=(S.touch.approximateSize??9)<1.2;
+    if(small || (tgt&&tgt.material==="food")) S.heldId=S.touch.objectId;
+  }
+  // magnetic grab: pickup action OR active food goal when close enough
+  if(!S.heldId){
+    const f=nearestFood(a);
+    const d=f?Math.hypot(f.position[0]-a.x,f.position[2]-a.z):99;
+    const wantFood=(S.goal&&S.goal.type==="food")||act==="pickup"||act==="eat";
+    if(f && d<1.4 && (act==="pickup" || (wantFood && d<1.1))){
+      S.heldId=f.id;
+      S.touch=sampleTouch(handWorld());
+      logSense("grab",`Grabbed ${f.name||"food"} at ${d.toFixed(2)} m.`);
+    }
+  }
+  if(act==="drop") S.heldId=null;
+  if(S.heldId){
+    const o=S.objects.find(x=>x.id===S.heldId);
+    if(o){ o.position=[hw[0],hw[1]+0.15,hw[2]]; const b=bodies[o.id]??={vx:0,vy:0,vz:0}; b.vx=b.vy=b.vz=0; }
+  }
+  agent.position.set(a.x,0,a.z);
+  agent.rotation.y=a.yaw;
+  handMesh.position.set(0.28,-0.05 + Math.sin(performance.now()/240)*0.02, -0.42 - (act==="touch"?0.18:0));
+  document.getElementById("hudHeld").classList.toggle("hidden", !S.heldId);
+}
+
+function updateCamera(dt){
+  if(S.cameraMode==="follow"){
+    const a=S.agent;
+    const tx=a.x+Math.sin(a.yaw)*3.2;
+    const tz=a.z+Math.cos(a.yaw)*3.2;
+    camera.position.lerp(new THREE.Vector3(tx,2.4,tz), 1-Math.pow(0.001,dt));
+    orbit.target.lerp(new THREE.Vector3(a.x,1.1,a.z), 0.12);
+  } else if(S.cameraMode==="walk"){
+    const a=S.agent;
+    camera.position.set(a.x, AGENT_EYE, a.z);
+    camera.lookAt(a.x-Math.sin(a.yaw)*Math.cos(a.pitch), AGENT_EYE+Math.sin(a.pitch), a.z-Math.cos(a.yaw)*Math.cos(a.pitch));
+    orbit.enabled=false;
+  } else {
+    orbit.enabled=!tcontrols.dragging;
+  }
+}
+
+let last=performance.now(), sensorAcc=0;
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  const w=canvas.clientWidth||canvas.parentElement.clientWidth, h=canvas.clientHeight||canvas.parentElement.clientHeight;
+  if(canvas.width!==w || canvas.height!==h){
+    renderer.setSize(w,h,false); camera.aspect=w/Math.max(1,h); camera.updateProjectionMatrix();
+  }
+  if(S.entered){
+    stepPhysics(dt);
+    stepAgent(dt);
+    syncMeshes();
+    amb.intensity=S.lights.ambient; key.intensity=S.lights.key; fill.intensity=S.lights.fill;
+    key.color.set(S.lights.keyColor);
+    sensorAcc+=dt;
+    if(sensorAcc>=1/Math.max(1,S.sensorHz)){
+      sensorAcc=0;
+      captureVision();
+      sampleAudioLab();
+      S.hearing=S.hearing.map(e=>({...e,ageMs:e.ageMs+1000/S.sensorHz})).filter(e=>e.ageMs<e.durationMs+800);
+      if(S.rightTab==="senses"||S.rightTab==="vision") renderRight();
+    }
+    updateCamera(dt);
+  }
+  orbit.update();
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------------- UI ---------------- */
+function setStatus(kind,detail){
+  S.status=kind; S.statusDetail=detail;
+  for(const id of ["statusPill","setupStatus"]){
+    const el=document.getElementById(id); if(!el) continue;
+    el.className="pill "+(kind==="online"?"ok":kind==="error"?"err":kind==="connecting"||kind==="warn"?"warn":kind==="local"?"local":"");
+    el.innerHTML=`<i></i><span>${detail}</span>`;
+  }
+}
+const modelSel=document.getElementById("hf-model");
+function fillModels(){
+  const list=S.provider==="groq"?GROQ_MODELS:HF_MODELS;
+  modelSel.innerHTML="";
+  list.forEach(m=>{const o=document.createElement("option"); o.value=m.id; o.textContent=m.label; modelSel.appendChild(o)});
+  const ids=list.map(m=>m.id);
+  modelSel.value=ids.includes(S.model)?S.model:list[0].id;
+  S.model=modelSel.value;
+}
+function applyProviderUI(){
+  const groq=S.provider==="groq";
+  document.getElementById("keyLabel").textContent=groq?"Groq API key":"Hugging Face API key";
+  document.getElementById("hf-key").placeholder=groq?"gsk_…":"hf_… (optional)";
+  document.getElementById("keyHint").textContent=groq?"Stored locally. Sent only to api.groq.com.":"Stored locally. Sent only to Hugging Face inference.";
+  document.getElementById("providerHint").textContent=groq?"Groq keys start with gsk_. Free with rate limits, no card needed.":"HF Inference Providers uses a small monthly credit, then paid.";
+  fillModels();
+}
+document.getElementById("provider").value=S.provider==="hf"?"hf":"groq";
+applyProviderUI();
+document.getElementById("provider").onchange=()=>{
+  S.provider=document.getElementById("provider").value;
+  applyProviderUI();
+  persistCfg();
+};
+document.getElementById("hf-key").value=S.apiKey;
+document.getElementById("hf-custom").value=S.customModel;
+document.getElementById("temp").value=S.temperature;
+document.getElementById("tokens").value=S.maxTokens;
+document.getElementById("thinkms").value=S.thinkingIntervalMs;
+
+function readSetup(){
+  S.provider=document.getElementById("provider").value;
+  S.apiKey=document.getElementById("hf-key").value.trim();
+  S.model=document.getElementById("hf-model").value;
+  S.customModel=document.getElementById("hf-custom").value.trim();
+  S.temperature=Number(document.getElementById("temp").value);
+  S.maxTokens=Number(document.getElementById("tokens").value);
+  S.thinkingIntervalMs=Number(document.getElementById("thinkms").value);
+  persistCfg();
+}
+document.getElementById("enterLocal").onclick=()=>{readSetup(); enter(true)};
+document.getElementById("enterHf").onclick=()=>{readSetup(); enter(!S.apiKey)};
+document.getElementById("testHf").onclick=async()=>{
+  readSetup();
+  if(!S.apiKey){setStatus("local","No key — using local cortex"); return;}
+  setStatus("connecting","Testing provider…");
+  try{await testConnection(); setStatus("online", S.customModel||S.model);}
+  catch(e){setStatus("error", e.message||"Connection failed")}
+};
+
+let thinkTimer=null;
+function enter(local){
+  unlockAudio();
+  S.entered=true; S.useLocal=local||!S.apiKey;
+  S.status=S.useLocal?"local":"online";
+  S.statusDetail=S.useLocal?"Running on-device cortex":`Linked to ${S.customModel||S.model}`;
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  setStatus(S.status,S.statusDetail);
+  syncMeshes(); attachGizmo(); renderLeft(); renderRight();
+  S.wantRemote=!S.useLocal;
+  S.remoteEvery=1;
+  S.stepsSinceRemote=0;
+  S.dimWaits=0;
+  S.baseThinkMs=S.thinkingIntervalMs||7000;
+  S.rateLimitStrikes=0;
+  S.apiCooldownUntil=0;
+  // Cap tokens for free-tier providers so we don't burn TPM quickly
+  if(!S.useLocal && S.apiKey) S.maxTokens=Math.min(Math.max(S.maxTokens,64), 96);
+  if(!S.chat.length){
+    pushChat("agent", S.useLocal
+      ? "Local cortex only. Rule-based explore, then rest."
+      : "Full AI mode. Remote model when available; local motor covers rate-limit gaps.");
+  }
+  scheduleThink();
+  setTimeout(()=>think(), 600);
+}
+function scheduleThink(){
+  if(thinkTimer) clearInterval(thinkTimer);
+  thinkTimer=setInterval(()=>{ if(!S.paused) think(); }, Math.max(400,S.thinkingIntervalMs));
+}
+
+document.getElementById("btnPause").onclick=()=>{
+  S.paused=!S.paused;
+  document.getElementById("btnPause").textContent=S.paused?"Resume":"Pause";
+  document.getElementById("hudAction").textContent=S.paused?"paused":S.action.replaceAll("_"," ");
+};
+document.getElementById("btnRestart").onclick=()=>resetAgent();
+document.getElementById("autoStop").onchange=e=>{
+  S.driveMode=e.target.checked?"autostop":"continuous";
+  if(S.driveMode==="continuous") setAwake(true,"Switched to continuous explore.");
+};
+document.getElementById("complexMode").onchange=e=>{
+  S.complexMode=e.target.checked;
+  document.getElementById("hudEnergy").classList.toggle("hidden",!S.complexMode);
+  if(S.complexMode){
+    S.thought="Complex physiology online. Interoception and neurochemistry active.";
+    pushChat("agent","Complex mode: I can feel hunger, balance, pain, and chemical signals now.");
+    logSense("system","Complex mode enabled — full interoception + neurochem.");
+  } else {
+    S.thought="Simplified cortex. Basic senses only.";
+  }
+  renderLeft(); renderRight();
+};
+document.getElementById("btnWake").onclick=()=>{
+  S.objective="Resume survey";
+  S.thought="Waking. Scanning for new structure.";
+  S.wantRemote=true;
+  setAwake(true,"Operator woke the agent.");
+  pushChat("you","Wake up and look around.");
+  think();
+};
+function sendOperatorNote(){
+  const box=document.getElementById("chatIn");
+  const text=((box&&box.value)||S.chatDraft||"").trim();
+  if(!text) return;
+  if(box) box.value="";
+  S.chatDraft="";
+  S.operatorNote=text.slice(0,280);
+  S.boredom=0; S.sameObjectiveSteps=0; S.goalFailStreak=0;
+  if(/\b(food|eat|nutrient|snack)\b/i.test(text)) setGoal("food", text);
+  else setGoal("note", text);
+  S.memory=pushCap(S.memory,{id:uid("mem"),t:Date.now(),kind:"place",signature:"note:"+Date.now(),summary:`Operator note: ${S.operatorNote}`},24);
+  pushChat("you", S.operatorNote);
+  pushMono("Operator said: "+S.operatorNote+" — adopting as goal.");
+  S.wantRemote=true;
+  setAwake(true,"Operator sent a note.");
+  think();
+  renderRight();
+}
+function resetAgent(){
+  S.agent={x:0,y:0,z:2.6,yaw:0,pitch:-0.08,hand:[0.28,-0.18,0.42]};
+  S.heldId=null; S.action="wait"; S.thought="Re-entering the chamber."; S.objective="Survey the chamber";
+  agent.position.set(0,0,2.6); agent.rotation.y=0;
+  setAwake(true,"Agent reset.");
+  renderRight();
+}
+document.getElementById("btnSpawn").onclick=spawnRandom;
+document.getElementById("btnRand").onclick=()=>{
+  Object.keys(bodies).forEach(k=>delete bodies[k]);
+  S.objects=createDefaultObjects();
+  S.objects.forEach(o=>{o.position[0]=Math.random()*6-3; o.position[2]=Math.random()*6-3; o.rotation[1]=Math.random()*Math.PI*2});
+  S.selectedId=null; S.memory=[]; S.hearing=[]; resetAgent(); syncMeshes(); renderLeft();
+};
+document.getElementById("btnResetRoom").onclick=()=>{
+  Object.keys(bodies).forEach(k=>delete bodies[k]);
+  S.objects=createDefaultObjects(); S.selectedId=null; S.heldId=null;
+  S.lights={ambient:0.28,key:1.15,fill:0.35,keyColor:"#f2efe6"};
+  resetAgent(); syncMeshes(); renderLeft();
+};
+document.getElementById("btnClearMem").onclick=()=>{S.memory=[];S.activity=[];S.thought="Memory cleared. Starting fresh."; renderRight();};
+document.getElementById("btnSave").onclick=()=>{
+  localStorage.setItem(BOX_KEY, exportSandbox());
+  S.activity=pushCap(S.activity,{id:uid("act"),t:Date.now(),text:"Sandbox snapshot stored locally."},40);
+  renderRight();
+};
+document.getElementById("btnExport").onclick=()=>{
+  const blob=new Blob([exportSandbox()],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sensorium-sandbox.json"; a.click();
+};
+document.getElementById("btnLoad").onclick=()=>document.getElementById("loadFile").click();
+document.getElementById("loadFile").onchange=async e=>{
+  const f=e.target.files?.[0]; if(!f) return; loadSandbox(await f.text()); e.target.value="";
+};
+function exportSandbox(){
+  return JSON.stringify({version:1,objects:S.objects.map(o=>({...o,modelUrl:undefined})),lights:S.lights},null,2);
+}
+function loadSandbox(raw){
+  const data=raw??localStorage.getItem(BOX_KEY); if(!data) return;
+  try{
+    const parsed=JSON.parse(data);
+    if(!Array.isArray(parsed.objects)) return;
+    S.objects=parsed.objects; S.lights=parsed.lights??S.lights; S.selectedId=null; S.heldId=null;
+    resetAgent(); syncMeshes(); renderLeft();
+  }catch{}
+}
+
+[["aiSpeed","aiSpeed"],["simSpeed","simSpeed"],["sensorHz","sensorHz"]].forEach(([id,key])=>{
+  document.getElementById(id).addEventListener("input",e=>{S[key]=Number(e.target.value); persistCfg();});
+});
+document.getElementById("visRes").addEventListener("input",e=>{resizeVision(Number(e.target.value)); persistCfg();});
+document.getElementById("thinkLive").addEventListener("input",e=>{S.thinkingIntervalMs=Number(e.target.value); persistCfg(); scheduleThink();});
+
+document.getElementById("camSeg").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.cameraMode=b.dataset.cam;
+  [...document.getElementById("camSeg").children].forEach(x=>x.classList.toggle("on",x===b));
+  orbit.enabled=S.cameraMode!=="walk";
+};
+document.getElementById("leftTabs").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.leftTab=b.dataset.tab;
+  [...document.getElementById("leftTabs").children].forEach(x=>x.classList.toggle("on",x===b));
+  renderLeft();
+};
+document.getElementById("rightTabs").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.rightTab=b.dataset.tab;
+  [...document.getElementById("rightTabs").children].forEach(x=>x.classList.toggle("on",x===b));
+  renderRight();
+};
+document.getElementById("mobileNav").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  [...document.getElementById("mobileNav").children].forEach(x=>x.classList.toggle("on",x===b));
+  document.getElementById("leftDock").classList.toggle("show", b.dataset.m==="edit");
+  document.getElementById("rightDock").classList.toggle("show", b.dataset.m==="vision"||b.dataset.m==="ai");
+  if(b.dataset.m==="vision"){S.rightTab="vision"; renderRight();}
+  if(b.dataset.m==="ai"){S.rightTab="cortex"; renderRight();}
+};
+
+function addPrimitive(shape){
+  const o=obj({
+    name:shape[0].toUpperCase()+shape.slice(1), shape,
+    position:[Math.random()*2-1,0.5,Math.random()*2-1], scale:[0.6,0.6,0.6], color:"#8aa0b5",
+  });
+  S.objects.push(o); S.selectedId=o.id; S.leftTab="inspector";
+  syncMeshes(); attachGizmo(); renderLeft();
+}
+function spawnRandom(){
+  const shapes=["box","sphere","cylinder","cone","torus","capsule"];
+  const mats=["matte","glossy","metal","glass","rubber","emissive"];
+  const colors=["#c43c32","#2b6cdb","#d7b23a","#3fa35a","#141414","#f4f1ea","#9fd4e8","#6ec8c0","#8a5a3a"];
+  const shape=shapes[Math.floor(Math.random()*shapes.length)];
+  const s=0.3+Math.random()*0.8;
+  const o=obj({
+    name:`Sample ${S.objects.length+1}`, shape,
+    position:[Math.random()*6-3,0.2+s*0.5,Math.random()*6-3],
+    rotation:[0,Math.random()*Math.PI,0], scale:[s,s*(0.7+Math.random()*0.6),s],
+    color:colors[Math.floor(Math.random()*colors.length)],
+    material:mats[Math.floor(Math.random()*mats.length)],
+    texture:Math.random()<0.3?"noise":"none",
+    mass:0.4+Math.random()*4, friction:Math.random(), restitution:Math.random()*0.8,
+    temperature:12+Math.random()*20, hardness:Math.random(),
+    sound:{enabled:Math.random()<0.25,frequency:180+Math.random()*720,volume:0.4,waveform:"sine",durationMs:400},
+  });
+  S.objects.push(o); S.selectedId=o.id; syncMeshes(); renderLeft();
+}
+function triggerSound(id){
+  const o=S.objects.find(x=>x.id===(id??S.selectedId)); if(!o) return;
+  playTone({frequency:o.sound.frequency,volume:o.sound.volume*S.masterVolume,durationMs:o.sound.durationMs,waveform:o.sound.waveform,
+    pan:clamp((o.position[0]-S.agent.x)/5,-1,1)});
+  S.hearing=pushCap(S.hearing, makeAuditoryEvent({
+    id:uid("snd"), frequency:o.sound.frequency, amplitude:o.sound.volume, durationMs:o.sound.durationMs,
+    waveform:o.sound.waveform, src:o.position, listener:S.agent,
+  }),6);
+  renderRight();
+}
+function playBurst(frequency,waveform="sine"){
+  playTone({frequency,volume:0.6*S.masterVolume,durationMs:500,waveform,pan:0});
+  S.hearing=pushCap(S.hearing, makeAuditoryEvent({
+    id:uid("snd"), frequency, amplitude:0.8, durationMs:500, waveform, src:[0,1,0], listener:S.agent,
+  }),6);
+  renderRight();
+}
+
+function renderLeft(){
+  const pane=document.getElementById("leftPane");
+  if(S.leftTab==="objects"){
+    pane.innerHTML=`
+      <div class="wrapbtns">
+        ${["box","sphere","cylinder","cone","torus"].map(s=>`<button class="sec" data-add="${s}">${s}</button>`).join("")}
+      </div>
+      <div class="wrapbtns" style="margin-top:8px">
+        <button class="ghost" id="importBtn">Import model</button>
+        <input id="modelFile" type="file" accept=".glb,.gltf,.obj,model/obj,text/plain" class="hidden"/>
+        <button class="ghost" id="dupBtn">Duplicate</button>
+        <button class="ghost" id="delBtn">Delete</button>
+      </div>
+      <ul class="olist">${S.objects.map(o=>`
+        <li><button data-sel="${o.id}" class="${o.id===S.selectedId?"on":""}">
+          <span class="sw" style="background:${o.color}"></span>${esc(o.name)}<span class="mono">${o.shape}</span>
+        </button></li>`).join("")}</ul>`;
+    pane.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>addPrimitive(b.dataset.add));
+    pane.querySelectorAll("[data-sel]").forEach(b=>b.onclick=()=>{S.selectedId=b.dataset.sel;S.leftTab="inspector";attachGizmo();renderLeft();});
+    pane.querySelector("#dupBtn").onclick=()=>{
+      const src=S.objects.find(o=>o.id===S.selectedId); if(!src) return;
+      const copy={...src,id:uid("obj"),name:src.name+" copy",position:[src.position[0]+.4,src.position[1],src.position[2]+.3],sound:{...src.sound}};
+      S.objects.push(copy); S.selectedId=copy.id; syncMeshes(); renderLeft();
+    };
+    pane.querySelector("#delBtn").onclick=()=>{
+      if(!S.selectedId) return;
+      S.objects=S.objects.filter(o=>o.id!==S.selectedId); S.selectedId=null; tcontrols.detach(); syncMeshes(); renderLeft();
+    };
+    pane.querySelector("#importBtn").onclick=()=>pane.querySelector("#modelFile").click();
+    pane.querySelector("#modelFile").onchange=e=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      const url=URL.createObjectURL(f);
+      const kind=/\.obj$/i.test(f.name)?"obj":"gltf";
+      const o=obj({name:f.name.replace(/\.(glb|gltf|obj)$/i,""),shape:"model",position:[0,0.2,0],scale:[1,1,1],color:"#c9d0d8",modelUrl:url,modelKind:kind,mass:2,hardness:0.7});
+      S.objects.push(o); S.selectedId=o.id; S.leftTab="inspector"; syncMeshes(); renderLeft();
+      e.target.value="";
+    };
+  } else if(S.leftTab==="inspector"){
+    const o=S.objects.find(x=>x.id===S.selectedId);
+    if(!o){pane.innerHTML=`<p class="hint">Select an object in the world or from the list.</p>`; return;}
+    pane.innerHTML=`
+      <div class="field"><label>Name</label><input id="inName" value="${esc(o.name)}"/></div>
+      <div class="field"><label>Shape</label>
+        <select id="inShape">${["box","sphere","cylinder","cone","pyramid","torus","capsule"].map(s=>`<option ${o.shape===s?"selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Colour</label><input id="inColor" type="color" value="${o.color.length===7?o.color:"#888888"}" style="height:36px;padding:4px"/></div>
+      <div class="field"><label>Wavelength λ1 (nm) — 200–1100, including UV/IR</label>
+        <input id="inNm1" type="number" min="200" max="1100" step="1" value="${o.wavelengthNm??""}" placeholder="e.g. 450"/>
+      </div>
+      <div class="field"><label>Wavelength λ2 (nm) — mix for non-spectral hues</label>
+        <input id="inNm2" type="number" min="0" max="1100" step="1" value="${o.wavelengthNm2??""}" placeholder="e.g. 650 for magenta-like mix"/>
+      </div>
+      <div class="wrapbtns" style="margin-bottom:10px">
+        <button class="sec" id="applyNm">Apply λ colour</button>
+        <button class="ghost" id="clearNm">Clear λ</button>
+      </div>
+      <p class="hint">One peak ≈ a spectral hue. Two peaks (e.g. 450+650) make a non-spectral mix the agent has to describe from channels, not a name.</p>
+      <div class="field"><label>Material</label>
+        <select id="inMat">${["matte","glossy","metal","glass","emissive","rubber"].map(s=>`<option ${o.material===s?"selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Texture</label>
+        <select id="inTex">${["none","checker","noise","stripes","dots"].map(s=>`<option ${o.texture===s?"selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      ${xyz("Pos",o.position,"pos",-4.5,4.5,0.05)}
+      ${xyz("Rot",o.rotation,"rot",-3.14,3.14,0.05)}
+      ${xyz("Scale",o.scale,"scl",0.08,3,0.02)}
+      ${sl("Mass",o.mass,"mass",0.1,10,0.1)}
+      ${sl("Friction",o.friction,"fric",0,1,0.01)}
+      ${sl("Bounciness",o.restitution,"rest",0,1,0.01)}
+      ${sl("Hardness",o.hardness,"hard",0,1,0.01)}
+      ${sl("Temperature °C",o.temperature,"temp",0,40,0.5)}
+      <label class="row"><span>Collision</span><input id="inCol" type="checkbox" ${o.collision?"checked":""}/></label>
+      <h2 style="margin:14px 0 8px">Sound</h2>
+      <label class="row"><span>Enabled</span><input id="inSnd" type="checkbox" ${o.sound.enabled?"checked":""}/></label>
+      ${sl("Frequency Hz",o.sound.frequency,"freq",80,1600,1)}
+      ${sl("Volume",o.sound.volume,"vol",0,1,0.01)}
+      <div class="field"><label>Waveform</label>
+        <select id="inWave">${["sine","square","sawtooth","triangle","noise"].map(s=>`<option ${o.sound.waveform===s?"selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      <div class="wrapbtns"><button class="sec" id="playObj">Trigger sound</button></div>
+    `;
+    const bind=()=>{
+      o.name=pane.querySelector("#inName").value;
+      o.shape=pane.querySelector("#inShape").value;
+      o.color=pane.querySelector("#inColor").value;
+      o.material=pane.querySelector("#inMat").value;
+      o.texture=pane.querySelector("#inTex").value;
+      o.position[0]=+pane.querySelector("#pos0").value; o.position[1]=+pane.querySelector("#pos1").value; o.position[2]=+pane.querySelector("#pos2").value;
+      o.rotation[0]=+pane.querySelector("#rot0").value; o.rotation[1]=+pane.querySelector("#rot1").value; o.rotation[2]=+pane.querySelector("#rot2").value;
+      o.scale[0]=+pane.querySelector("#scl0").value; o.scale[1]=+pane.querySelector("#scl1").value; o.scale[2]=+pane.querySelector("#scl2").value;
+      o.mass=+pane.querySelector("#mass").value; o.friction=+pane.querySelector("#fric").value; o.restitution=+pane.querySelector("#rest").value;
+      o.hardness=+pane.querySelector("#hard").value; o.temperature=+pane.querySelector("#temp").value;
+      o.collision=pane.querySelector("#inCol").checked; o.sound.enabled=pane.querySelector("#inSnd").checked;
+      o.sound.frequency=+pane.querySelector("#freq").value; o.sound.volume=+pane.querySelector("#vol").value;
+      o.sound.waveform=pane.querySelector("#inWave").value;
+      const n1=pane.querySelector("#inNm1").value;
+      const n2=pane.querySelector("#inNm2").value;
+      o.wavelengthNm=n1===""?null:Number(n1);
+      o.wavelengthNm2=n2===""||Number(n2)===0?null:Number(n2);
+      syncMeshes(); attachGizmo();
+    };
+    pane.querySelector("#applyNm").onclick=()=>{
+      const n1=Number(pane.querySelector("#inNm1").value);
+      const n2=Number(pane.querySelector("#inNm2").value);
+      if(!n1) return;
+      o.wavelengthNm=n1;
+      o.wavelengthNm2=n2||null;
+      o.color=colorFromSpectrum(n1, n2||null);
+      pane.querySelector("#inColor").value=o.color;
+      syncMeshes(); attachGizmo(); renderLeft();
+    };
+    pane.querySelector("#clearNm").onclick=()=>{
+      o.wavelengthNm=null; o.wavelengthNm2=null;
+      pane.querySelector("#inNm1").value=""; pane.querySelector("#inNm2").value="";
+      syncMeshes();
+    };
+    pane.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",bind));
+    pane.querySelector("#playObj").onclick=()=>triggerSound(o.id);
+  } else if(S.leftTab==="audiolab"){
+    const lab=S.audioLab;
+    pane.innerHTML=`
+      <h2 style="margin:0 0 4px">Music &amp; Audio Lab</h2>
+      <p class="hint" style="margin-top:0">Drives a sustained tone the agent's hearing can sample. Events are only sent to the AI when the frequency or amplitude changes meaningfully — a steady tone stays silent to the model after the first event.</p>
+      <div class="wrapbtns" style="margin:10px 0">
+        <button class="${lab.playing?"primary":"accent"}" id="alPlay">${lab.playing?"Playing":"Play"}</button>
+        <button class="sec" id="alPause">Pause</button>
+        <button class="ghost" id="alStop">Stop</button>
+      </div>
+      ${sl("Volume",lab.volume,"alVol",0,1,0.01)}
+      ${sl("Frequency (Hz)",lab.freq,"alFreq",40,2000,1)}
+      ${sl("Second frequency (0 = off)",lab.freq2,"alFreq2",0,2000,1)}
+      <div class="field"><label for="alWave">Waveform</label>
+        <select id="alWave">
+          ${["sine","square","triangle","sawtooth"].map(w=>`<option value="${w}" ${lab.waveform===w?"selected":""}>${w}</option>`).join("")}
+        </select>
+      </div>
+      <p class="hint">Quick tone tests (one-shot bursts, separate from the sustained tone above):</p>
+      <div class="wrapbtns">
+        <button class="sec" id="alTest440">Test 440 Hz</button>
+        <button class="sec" id="alTest880">Test 880 Hz</button>
+      </div>
+      <div class="row" style="margin-top:12px"><span>Sustained state</span><b>${lab.playing?"on":"off"}</b></div>
+      <div class="row"><span>Last event sent</span><b>${lab.lastSentFreq??"—"} Hz</b></div>
+    `;
+    pane.querySelector("#alPlay").onclick=()=>{ audioLabStart(); renderLeft(); };
+    pane.querySelector("#alPause").onclick=()=>{ if(lab.gain) lab.gain.gain.value=0.0001; };
+    pane.querySelector("#alStop").onclick=()=>{ audioLabStop(); renderLeft(); };
+    pane.querySelector("#alVol").oninput=e=>{ audioLabSetVolume(+e.target.value); };
+    pane.querySelector("#alFreq").oninput=e=>{ audioLabSetFreq(+e.target.value,1); };
+    pane.querySelector("#alFreq2").oninput=e=>{ audioLabSetFreq(+e.target.value,2); };
+    pane.querySelector("#alWave").onchange=e=>{
+      lab.waveform=e.target.value;
+      if(lab.node) lab.node.type=lab.waveform;
+      if(lab.node2) lab.node2.type=lab.waveform;
+    };
+    pane.querySelector("#alTest440").onclick=()=>playBurst(440,"sine");
+    pane.querySelector("#alTest880").onclick=()=>playBurst(880,"sine");
+  } else if(S.leftTab==="scene"){
+    pane.innerHTML=`
+      <p class="hint" style="margin-top:0">Transform gizmo</p>
+      <div class="seg" id="xfSeg">
+        <button data-xf="translate" class="${S.transformMode==="translate"?"on":""}">Move</button>
+        <button data-xf="rotate" class="${S.transformMode==="rotate"?"on":""}">Rotate</button>
+        <button data-xf="scale" class="${S.transformMode==="scale"?"on":""}">Scale</button>
+      </div>
+      ${sl("Ambient",S.lights.ambient,"amb",0,1.5,0.05)}
+      ${sl("Key",S.lights.key,"key",0,3,0.05)}
+      ${sl("Fill",S.lights.fill,"fill",0,2,0.05)}
+      <div class="field"><label>Key colour</label><input id="keyCol" type="color" value="${S.lights.keyColor}" style="height:36px"/></div>
+      ${sl("Master volume",S.masterVolume,"mvol",0,1,0.01)}
+      ${sl("Field of view",S.fov,"fov",40,110,1)}
+      <div class="wrapbtns" style="margin-top:12px">
+        <button class="sec" id="lowB">Low burst 220 Hz</button>
+        <button class="sec" id="hiB">High burst 880 Hz</button>
+      </div>
+    `;
+    pane.querySelector("#xfSeg").onclick=e=>{
+      const b=e.target.closest("button"); if(!b) return;
+      S.transformMode=b.dataset.xf; tcontrols.setMode(S.transformMode); renderLeft();
+    };
+    pane.querySelector("#amb").oninput=e=>S.lights.ambient=+e.target.value;
+    pane.querySelector("#key").oninput=e=>S.lights.key=+e.target.value;
+    pane.querySelector("#fill").oninput=e=>S.lights.fill=+e.target.value;
+    pane.querySelector("#keyCol").oninput=e=>S.lights.keyColor=e.target.value;
+    pane.querySelector("#mvol").oninput=e=>{S.masterVolume=+e.target.value; persistCfg();};
+    pane.querySelector("#fov").oninput=e=>S.fov=+e.target.value;
+    pane.querySelector("#lowB").onclick=()=>playBurst(220,"square");
+    pane.querySelector("#hiB").onclick=()=>playBurst(880,"sine");
+  } else if(S.leftTab==="body"){
+    if(!S.complexMode){
+      pane.innerHTML=`<p class="hint">Enable <b>Complex mode</b> in the header to unlock interoception, digestion, neurochemistry, circadian, memory, and body status.</p>
+        <label class="row"><span>Complex mode</span><input id="cmToggle" type="checkbox" ${S.complexMode?"checked":""}/></label>`;
+      pane.querySelector("#cmToggle").onchange=e=>{S.complexMode=e.target.checked; document.getElementById("complexMode").checked=S.complexMode; document.getElementById("complexMode").dispatchEvent(new Event("change"));};
+      return;
+    }
+    const st=S.stomach;
+    const phaseLabel=S.circadian.phase<0.2||S.circadian.phase>0.85?"night":S.circadian.phase<0.45?"morning":S.circadian.phase<0.7?"day":"evening";
+    pane.innerHTML=`
+      <h2 style="margin:0 0 6px">Physiology</h2>
+      <div class="row"><span>Energy / Battery</span><b>${Math.round(S.energy*100)}% / ${Math.round(S.metabolic.battery*100)}%</b></div>
+      <div class="row"><span>Hunger / Hydration</span><b>${Math.round(S.hunger*100)}% / ${Math.round(S.hydration*100)}%</b></div>
+      <div class="row"><span>Wear / Life left</span><b>${Math.round(S.metabolic.wear*100)}% / ${round(S.lifespanHours)}h</b></div>
+      <div class="row"><span>Core / Skin °C</span><b>${round(S.coreTempC)} / ${round(S.skinTempC)}</b></div>
+      <h2 style="margin:12px 0 6px">Circadian</h2>
+      <div class="row"><span>Phase</span><b>${phaseLabel} (${round(S.circadian.phase)})</b></div>
+      <div class="row"><span>Alertness / Efficiency</span><b>${Math.round(S.circadian.alertness*100)}% / ${Math.round(S.circadian.efficiency*100)}%</b></div>
+      <div class="row"><span>Sleep debt</span><b>${Math.round(S.sleepDebt*100)}%</b></div>
+      <h2 style="margin:12px 0 6px">Stomach</h2>
+      <div class="row"><span>Digesting</span><b>${st.digesting?esc(st.digesting)+" ("+Math.round(st.progress*100)+"%)":"empty"}</b></div>
+      <div class="row"><span>Queue</span><b>${st.contents.length?st.contents.map(esc).join(", "):"—"}</b></div>
+      <div class="wrapbtns" style="margin:8px 0">
+        <button class="accent" id="spawnFood">Spawn food</button>
+        <button class="sec" id="forceDigest">Force digest tick</button>
+      </div>
+      <h2 style="margin:12px 0 6px">Endocrine</h2>
+      <div class="row"><span>Dopamine</span><b>${Math.round(S.neuro.dopamine*100)}%</b></div>
+      <div class="row"><span>Cortisol</span><b>${Math.round(S.neuro.cortisol*100)}%</b></div>
+      <div class="row"><span>Adrenaline</span><b>${Math.round(S.neuro.adrenaline*100)}%</b></div>
+      <div class="row"><span>Oxytocin / Serotonin</span><b>${Math.round(S.neuro.oxytocin*100)}% / ${Math.round(S.neuro.serotonin*100)}%</b></div>
+      <div class="wrapbtns">
+        <button class="sec" id="spikeCort">Spike cortisol</button>
+        <button class="sec" id="spikeDop">Spike dopamine</button>
+        <button class="ghost" id="calmNeuro">Calm</button>
+      </div>
+      <h2 style="margin:12px 0 6px">Vision motor</h2>
+      <div class="row"><span>Fovea cell</span><b>${round(S.gaze.foveaGx)}, ${round(S.gaze.foveaGy)}</b></div>
+      <div class="row"><span>Saccade / Habituated</span><b>${S.vision.saccadeActive?"active":"fix"} / ${S.vision.habituatedCells||0}</b></div>
+      <div class="row"><span>Adaptation</span><b>${round(S.adaptation.dark-S.adaptation.bright)}</b></div>
+      <h2 style="margin:12px 0 6px">Memory / Self</h2>
+      <div class="row"><span>Short / Long-term</span><b>${S.shortTermMem.length} / ${S.longTermMem.length}</b></div>
+      <div class="row"><span>Beliefs</span><b>${S.beliefs.length}</b></div>
+      <div class="row"><span>Tip-of-tongue</span><b>${S.tipOfTongue?"yes ("+S.tipOfTongue.cyclesLeft+")":"no"}</b></div>
+      <div class="row"><span>Inner critic</span><b>${S.innerCriticNote?esc(S.innerCriticNote.slice(0,40)): "—"}</b></div>
+      <div class="wrapbtns">
+        <button class="sec" id="forceConsol">Consolidate memory</button>
+        <button class="sec" id="addBelief">Add belief</button>
+        <button class="ghost" id="forceNight">Force night</button>
+      </div>
+      <h2 style="margin:12px 0 6px">Interoception / Pain</h2>
+      <div class="row"><span>Baro / O₂ / CO₂</span><b>${round(S.intero.baro)} / ${round(S.intero.chemoO2)} / ${round(S.intero.chemoCO2)}</b></div>
+      <div class="row"><span>Osmo / Gluco / Lung</span><b>${round(S.intero.osmo)} / ${round(S.intero.gluco)} / ${round(S.intero.pulmonary)}</b></div>
+      <div class="row"><span>Pain m/t/c</span><b>${round(S.nociception.mechanical)} / ${round(S.nociception.thermal)} / ${round(S.nociception.chemical)}</b></div>
+      <div class="row"><span>Balance tilt</span><b>${round(S.proprio.balanceTilt)}</b></div>
+    `;
+    pane.querySelector("#spawnFood").onclick=()=>{
+      const o=obj({name:"Nutrient cube",shape:"box",position:[S.agent.x-Math.sin(S.agent.yaw)*0.9,0.25,S.agent.z-Math.cos(S.agent.yaw)*0.9],
+        scale:[0.28,0.28,0.28],color:"#e8a54b",material:"food",mass:0.3,friction:0.5,restitution:0.1,temperature:22,hardness:0.2});
+      S.objects.push(o); syncMeshes(); renderLeft();
+      logSense("food","Nutrient cube spawned near agent.");
+    };
+    pane.querySelector("#forceDigest").onclick=()=>{ if(S.stomach.digesting) S.stomach.progress=1; tickPhysiology(0.5); renderLeft(); };
+    pane.querySelector("#spikeCort").onclick=()=>{S.neuro.cortisol=0.92; S.neuro.adrenaline=0.95; renderLeft();};
+    pane.querySelector("#spikeDop").onclick=()=>{S.neuro.dopamine=0.9; renderLeft();};
+    pane.querySelector("#calmNeuro").onclick=()=>{S.neuro.cortisol=0.1; S.neuro.adrenaline=0.08; S.neuro.dopamine=0.4; S.neuro.serotonin=0.6; renderLeft();};
+    pane.querySelector("#forceConsol").onclick=()=>{
+      S.shortTermMem.forEach(m=>m.t=0); // age them
+      consolidateMemory(); renderLeft();
+    };
+    pane.querySelector("#addBelief").onclick=()=>{
+      S.beliefs=pushCap(S.beliefs,{text:"Novel long-wave patches are worth approaching",rejects:"ignore",t:Date.now()},8);
+      renderLeft();
+    };
+    pane.querySelector("#forceNight").onclick=()=>{S.circadian.phase=0.05; S.sleepDebt=0.6; renderLeft();};
+  } else if(S.leftTab==="sandbox"){
+    pane.innerHTML=`
+      <h2 style="margin:0 0 6px">Sandbox commands</h2>
+      <p class="hint" style="margin-top:0">Silly / experimental operators. These affect the agent or room instantly.</p>
+      <div class="wrapbtns" style="margin:8px 0">
+        <button class="accent" id="sbFling">Fling AI</button>
+        <button class="sec" id="sbSpin">Spin 360°</button>
+        <button class="sec" id="sbYeet">Yeet held object</button>
+        <button class="sec" id="sbShuffle">Shuffle objects</button>
+        <button class="sec" id="sbDark">Lights out</button>
+        <button class="sec" id="sbBright">Full blast lights</button>
+        <button class="sec" id="sbEarthquake">Earthquake</button>
+        <button class="sec" id="sbRainFood">Rain food</button>
+        <button class="sec" id="sbScare">Scare (cortisol)</button>
+        <button class="sec" id="sbParty">Party mode</button>
+        <button class="ghost" id="sbResetPhysio">Reset physio</button>
+        <button class="ghost" id="sbMission">Assign multi-step mission</button>
+      </div>
+      <p class="hint" id="sbMsg"></p>
+    `;
+    const msg=t=>{const el=pane.querySelector("#sbMsg"); if(el) el.textContent=t;};
+    pane.querySelector("#sbFling").onclick=()=>{
+      S.agent.x=clamp(S.agent.x+(Math.random()-0.5)*3,-ROOM_HALF+0.5,ROOM_HALF-0.5);
+      S.agent.z=clamp(S.agent.z+(Math.random()-0.5)*3,-ROOM_HALF+0.5,ROOM_HALF-0.5);
+      S.agent.yaw+=Math.random()*Math.PI*2;
+      if(S.complexMode){S.neuro.adrenaline=0.8; S.proprio.balanceTilt=0.4;}
+      msg("Agent flung across the chamber!");
+      logSense("sandbox","Agent was flung by operator.");
+    };
+    pane.querySelector("#sbSpin").onclick=()=>{S.agent.yaw+=Math.PI*2; msg("Full spin complete.");};
+    pane.querySelector("#sbYeet").onclick=()=>{
+      if(!S.heldId){msg("Nothing held."); return;}
+      const o=S.objects.find(x=>x.id===S.heldId); if(!o) return;
+      const b=bodies[o.id]??={vx:0,vy:0,vz:0};
+      b.vx=-Math.sin(S.agent.yaw)*6; b.vy=4; b.vz=-Math.cos(S.agent.yaw)*6;
+      S.heldId=null; msg("Yeeted!");
+    };
+    pane.querySelector("#sbShuffle").onclick=()=>{
+      S.objects.forEach(o=>{o.position[0]=Math.random()*7-3.5; o.position[2]=Math.random()*7-3.5; o.position[1]=0.5+Math.random();});
+      Object.keys(bodies).forEach(k=>delete bodies[k]); syncMeshes(); msg("Objects shuffled.");
+    };
+    pane.querySelector("#sbDark").onclick=()=>{S.lights.ambient=0.02; S.lights.key=0.05; S.lights.fill=0.02; msg("Lights out.");};
+    pane.querySelector("#sbBright").onclick=()=>{S.lights.ambient=0.6; S.lights.key=2.2; S.lights.fill=0.8; msg("Full blast.");};
+    pane.querySelector("#sbEarthquake").onclick=()=>{
+      S.objects.forEach(o=>{const b=bodies[o.id]??={vx:0,vy:0,vz:0}; b.vx+=(Math.random()-0.5)*4; b.vz+=(Math.random()-0.5)*4; b.vy+=Math.random()*2;});
+      if(S.complexMode){S.neuro.cortisol=0.7; S.proprio.balanceTilt=0.5;}
+      msg("Earthquake!");
+    };
+    pane.querySelector("#sbRainFood").onclick=()=>{
+      for(let i=0;i<5;i++){
+        const o=obj({name:`Snack ${i+1}`,shape:"sphere",position:[Math.random()*4-2,2+Math.random(),Math.random()*4-2],
+          scale:[0.22,0.22,0.22],color:"#e8a54b",material:"food",mass:0.25,friction:0.4,restitution:0.3,temperature:20,hardness:0.15});
+        S.objects.push(o);
+      }
+      syncMeshes(); msg("Food rain!");
+    };
+    pane.querySelector("#sbScare").onclick=()=>{
+      if(S.complexMode){S.neuro.cortisol=0.95; S.neuro.adrenaline=1; msg("Agent is terrified.");}
+      else msg("Enable complex mode for neurochem scare.");
+    };
+    pane.querySelector("#sbParty").onclick=()=>{
+      S.lights.keyColor="#ff66aa"; S.lights.key=1.8; S.lights.ambient=0.4;
+      playBurst(523,"square"); setTimeout(()=>playBurst(659,"sine"),200); setTimeout(()=>playBurst(784,"triangle"),400);
+      if(S.complexMode) S.neuro.dopamine=0.85;
+      msg("Party mode engaged.");
+    };
+    pane.querySelector("#sbResetPhysio").onclick=()=>{
+      S.energy=1; S.hunger=0.2; S.hydration=0.85; S.neuro={dopamine:0.45,cortisol:0.15,adrenaline:0.1};
+      S.stomach={contents:[],digesting:null,progress:0,capacity:3}; S.nociception={mechanical:0,thermal:0,chemical:0,active:false};
+      msg("Physiology reset.");
+    };
+    pane.querySelector("#sbMission").onclick=()=>{
+      S.mission={name:"Survey & sample",step:0,steps:["Explore unvisited area","Approach a novel wavelength","Touch the surface","Return toward centre","Rest"]};
+      S.objective=S.mission.steps[0]; S.awake=true; msg("Mission assigned: "+S.mission.name);
+      pushChat("agent","New mission received: "+S.mission.name+". Step 1: "+S.mission.steps[0]);
+      think();
+    };
+  }
+}
+function sl(label,val,id,min,max,step){
+  return `<div class="field"><label>${label} <b style="float:right;color:var(--fg)">${typeof val==="number"?round(val):val}</b></label>
+    <input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}"/></div>`;
+}
+function xyz(label,arr,pref,min,max,step){
+  return `<div class="field"><label>${label}</label><div class="grid3">
+    ${[0,1,2].map(i=>`<input id="${pref}${i}" type="number" step="${step}" min="${min}" max="${max}" value="${round(arr[i])}"/>`).join("")}
+  </div></div>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+
+function renderRight(){
+  const pane=document.getElementById("rightPane");
+  if(S.rightTab==="vision"){
+    const modes=[["raw","Raw"],["inferred","Inferred"],["red","Red"],["blue","Blue"],["yellow","Yellow"],["bw","B/W"],["edges","Edges"],["depth","Depth"],["wavelength","λ nm"]];
+    pane.innerHTML=`
+      <div class="wrapbtns" id="modes">${modes.map(([id,l])=>`<button class="sec ${S.visionMode===id?"primary":""}" data-mode="${id}" style="${S.visionMode===id?"background:var(--fg);color:var(--bg);border-color:var(--fg)":""}">${l}</button>`).join("")}</div>
+      <div id="visHost" style="margin:10px 0"></div>
+      <div class="row"><span>Resolution</span><b>${S.vision.resolution}×${S.vision.resolution}</b></div>
+      <div class="row"><span>FOV</span><b>${S.vision.fov}°</b></div>
+      <div class="row"><span>Brightness</span><b>${S.vision.meanBrightness}</b></div>
+      <div class="row"><span>Dominant λ</span><b>${S.vision.dominantWavelengthNm??"broadband"} ${S.vision.dominantWavelengthNm?"nm":""}</b></div>
+      <div class="row"><span>Nearest depth</span><b>${S.vision.minDepth} m</b></div>
+      <div class="row"><span>Edges / motion</span><b>${S.vision.edgeDensity} / ${S.vision.motion}</b></div>
+      ${(S.vision.spectral||[]).map(s=>`<div class="row"><span>${s.band}</span><b>${Math.round(s.share*100)}%</b></div>`).join("")}
+    `;
+    const host=document.getElementById("visHost");
+    if(host) host.appendChild(visCanvas);
+    pane.querySelector("#modes").onclick=e=>{
+      const b=e.target.closest("button"); if(!b) return;
+      S.visionMode=b.dataset.mode; drawVision(); renderRight();
+    };
+  } else if(S.rightTab==="cortex"){
+    const msgs=S.chat.map(m=>{
+      const when=new Date(m.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+      return `<div class="bubble ${m.from==="you"?"you":"agent"}">${esc(m.text)}<time>${m.from==="you"?"You":"Agent"} · ${when}</time></div>`;
+    }).join("") || `<div class="bubble agent">Waiting for the first thought.<time>Agent</time></div>`;
+    const mono=(S.monologue||[]).slice(-14).reverse().map(m=>{
+      const when=new Date(m.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+      return `<div class="mono-line"><span class="mono-t">${when}</span> ${esc(m.text)}</div>`;
+    }).join("") || `<div class="mono-line">No inner speech yet — open this while the agent works.</div>`;
+    const g=S.goal;
+    const foodN=S.objects.filter(o=>o.material==="food").length;
+    let missionHtml="";
+    if(S.mission && S.mission.steps){
+      missionHtml=`<div class="mission-card"><b>${esc(S.mission.name||"Mission")}</b>
+        <ol class="mission-steps">${S.mission.steps.map((s,i)=>`<li class="${i<S.mission.step?"done":i===S.mission.step?"cur":""}">${esc(s)}</li>`).join("")}</ol></div>`;
+    }
+    const modeLabel=S.useLocal?"Local rules":(S.customModel||S.model);
+    pane.innerHTML=`
+      <div class="chat-app">
+        <div class="chat-head">
+          <b>${esc(S.objective||"Aware in the chamber")}</b>
+          <span>${S.awake?S.action.replaceAll("_"," "):"resting"} · ${esc(modeLabel)}${g?` · ${esc(g.type)}`:" "}${foodN?` · ${foodN} food`:""}</span>
+        </div>
+        ${missionHtml}
+        <div class="goal-bar">
+          <button class="sec" id="btnFindFood">Find food</button>
+          <button class="sec" id="btnSpawnFoodChat">Spawn food</button>
+          <button class="sec" id="btnMission">Mission</button>
+          <button class="ghost" id="forceRest">Stop</button>
+        </div>
+        <details class="think-panel" ${S.thinkOpen!==false?"open":""}>
+          <summary>Inner monologue</summary>
+          <div class="mono-scroll" id="monoBox">${mono}</div>
+        </details>
+        <div class="chat-thread" id="thread">${msgs}</div>
+        <p class="chat-lock">${S.awake?"Thinking with the model…":"Resting — send a note to wake."}</p>
+        <div class="chat-compose">
+          <input id="chatIn" type="text" maxlength="280" placeholder="Message the embodied AI…" value="${esc(S.chatDraft||"")}"/>
+          <button class="accent" id="chatSend">Send</button>
+        </div>
+      </div>`;
+    const thread=pane.querySelector("#thread");
+    if(thread) thread.scrollTop=thread.scrollHeight;
+    const details=pane.querySelector(".think-panel");
+    if(details) details.addEventListener("toggle",()=>{S.thinkOpen=details.open;});
+    const box=pane.querySelector("#chatIn");
+    const send=pane.querySelector("#chatSend");
+    if(box){
+      box.oninput=()=>{S.chatDraft=box.value};
+      box.addEventListener("keydown",e=>{ if(e.key==="Enter") sendOperatorNote(); });
+    }
+    if(send) send.onclick=sendOperatorNote;
+    const stop=()=>{
+      S.action="rest"; S.objective="Rest"; S.thought="Stopped by operator.";
+      completeGoal("Operator stopped.");
+      setAwake(false,"Operator ended the goal.");
+      pushChat("agent","Stopped. Your turn.");
+      renderRight();
+    };
+    pane.querySelector("#forceRest")?.addEventListener("click", stop);
+    pane.querySelector("#btnFindFood")?.addEventListener("click",()=>{
+      setGoal("food","Find and eat food");
+      S.operatorNote="find food and eat it";
+      S.goalFailStreak=0; S.boredom=0; S.stepsThisWake=0;
+      setAwake(true,"Food goal set.");
+      pushChat("you","Find food and eat it.");
+      pushMono("Operator ordered a food goal. Scanning for nutrient objects…");
+      think();
+      renderRight();
+    });
+    pane.querySelector("#btnSpawnFoodChat")?.addEventListener("click",()=>{
+      const o=obj({name:"Nutrient cube",shape:"box",
+        position:[S.agent.x-Math.sin(S.agent.yaw)*0.8,0.28,S.agent.z-Math.cos(S.agent.yaw)*0.8],
+        scale:[0.28,0.28,0.28],color:"#e8a54b",material:"food",mass:0.3,friction:0.5,restitution:0.1,temperature:22,hardness:0.2});
+      S.objects.push(o); syncMeshes();
+      setGoal("food","Eat the spawned nutrient");
+      S.huntId=o.id; S.stepsThisWake=0; S.goalFailStreak=0;
+      pushChat("agent","Food spawned in front of me — acquiring it.");
+      pushMono("Nutrient appeared nearby. I will pick it up and eat.");
+      setAwake(true,"Food spawned.");
+      think();
+      renderRight();
+    });
+    pane.querySelector("#btnMission")?.addEventListener("click",()=>{
+      S.mission={name:"Chamber survey",step:0,steps:["Explore unvisited area","Approach a novel wavelength","Touch a surface","Find food if any","Rest"]};
+      S.stepsThisWake=0; S.boredom=0;
+      setGoal("mission",S.mission.name);
+      setAwake(true,"Mission assigned.");
+      pushChat("you","Run the chamber survey mission.");
+      pushMono("Mission accepted. Starting step 1.");
+      think();
+      renderRight();
+    });
+  } else {
+    const t=S.touch, h=S.hearing[0], v=S.vision;
+    const timeline=S.senseTimeline.slice(-16).reverse().map(e=>{
+      const when=new Date(e.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+      return `<div>${when} · <b style="color:var(--fg)">${esc(e.kind)}</b> — ${esc(e.text)}</div>`;
+    }).join("") || "<div>No events yet.</div>";
+    const cones=v.cones||{L:0,M:0,S:0};
+    pane.innerHTML=`
+      <h2>Visual cortex</h2>
+      <div class="row"><span>Frame ID / rate</span><b>#${S.frameId} · ${S.sensorHz} Hz</b></div>
+      <div class="row"><span>λ / brightness</span><b>${v.dominantWavelengthNm??"broadband"} nm · ${v.meanBrightness}</b></div>
+      <div class="row"><span>Cones L / M / S</span><b>${cones.L} / ${cones.M} / ${cones.S}</b></div>
+      <div class="row"><span>Cone contrast</span><b>${v.coneContrast??0}</b></div>
+      <div class="row"><span>Depth</span><b>${v.minDepth}–${v.meanDepth} m</b></div>
+      <div class="row"><span>Edges / motion</span><b>${v.edgeDensity} / ${v.motion}</b></div>
+      ${S.complexMode?`<div class="row"><span>Fovea / saccade</span><b>${v.fovea?v.fovea.gx+","+v.fovea.gy:"—"} / ${v.saccadeActive?"yes":"no"}</b></div>
+      <div class="row"><span>Habituated cells</span><b>${v.habituatedCells||0}</b></div>
+      <div class="row"><span>Periph blur / adapt</span><b>${v.peripheralBlur??0} / ${v.adaptationState??0}</b></div>
+      <div class="row"><span>Circadian alert</span><b>${Math.round(S.circadian.alertness*100)}%</b></div>`:""}
+      ${(v.wavelengthHistogram||[]).slice(0,4).map(h=>`<div class="row"><span>Hist ${h.nm} nm</span><b>${h.weight}</b></div>`).join("")}
+      <h2 style="margin-top:14px">Touch cortex</h2>
+      <div class="row"><span>Contact</span><b>${t.contact?"yes":"none"}</b></div>
+      <div class="row"><span>Feel</span><b>${t.materialFeel??"—"}</b></div>
+      <div class="row"><span>Shape</span><b>${t.curvature??"—"}</b></div>
+      <div class="row"><span>Force / hardness</span><b>${t.forceN??"—"} / ${t.hardness??"—"}</b></div>
+      <div class="row"><span>Temp</span><b>${t.temperatureC??"—"} °C</b></div>
+      ${t.contact?`<div class="row"><span>Wet / vib / pressure</span><b>${t.wetness} / ${t.vibration} / ${t.pressureGradient}</b></div>`:""}
+      <h2 style="margin-top:14px">Hearing cortex</h2>
+      <div class="row"><span>Dominant</span><b>${h?h.frequencyHz+" Hz":"quiet"}</b></div>
+      <div class="row"><span>Amplitude</span><b>${h?h.amplitude:"—"}</b></div>
+      <div class="row"><span>Azimuth / dist</span><b>${h?h.azimuthDeg+"° / "+h.distanceM+" m":"—"}</b></div>
+      <div class="row"><span>Waveform</span><b>${h?h.waveform:"—"}</b></div>
+      <div class="row"><span>Last change</span><b>${h?.changeNote??"—"}</b></div>
+      <h2 style="margin-top:14px">Movement / navigation</h2>
+      <div class="row"><span>Position</span><b>${round(S.agent.x)}, ${round(S.agent.z)}</b></div>
+      <div class="row"><span>Heading</span><b>${Math.round(S.agent.yaw*180/Math.PI)}°</b></div>
+      <div class="row"><span>Velocity</span><b>${round(Math.hypot(S.vAgentX||0,S.vAgentZ||0))} m/s</b></div>
+      <div class="row"><span>Nearest obstacle</span><b>${S.nearestObstacleM} m</b></div>
+      <div class="row"><span>Nav target</span><b>${S.navLabel||S.exploreLabel||"none"}</b></div>
+      <div class="row"><span>Stuck level</span><b>${S.stuckLevel||0}${S.recovering?" (recovering)":""}</b></div>
+      ${S.mission?`<div class="row"><span>Mission</span><b>${esc(S.mission.name)} [${S.mission.step+1}/${S.mission.steps.length}]</b></div>`:""}
+      ${S.complexMode?`
+      <h2 style="margin-top:14px">Complex physiology</h2>
+      <div class="row"><span>Energy / Hunger</span><b>${Math.round(S.energy*100)}% / ${Math.round(S.hunger*100)}%</b></div>
+      <div class="row"><span>Dopamine / Cortisol / Adr</span><b>${Math.round(S.neuro.dopamine*100)} / ${Math.round(S.neuro.cortisol*100)} / ${Math.round(S.neuro.adrenaline*100)}</b></div>
+      <div class="row"><span>Pain active</span><b>${S.nociception.active?"yes":"no"}</b></div>
+      <div class="row"><span>Balance tilt</span><b>${round(S.proprio.balanceTilt)}</b></div>
+      `:""}
+      <h2 style="margin-top:14px">Sensory event timeline</h2>
+      <div class="log" style="border-top:none;padding-top:0">${timeline}</div>
+    `;
+  }
+}
+
+// keep energy HUD updated
+setInterval(()=>{
+  const el=document.getElementById("hudEnergy");
+  if(el && S.complexMode) el.textContent=`E ${Math.round(S.energy*100)}%`;
+},500);
+
+syncMeshes();
+</script>
+</body>
+</html>
